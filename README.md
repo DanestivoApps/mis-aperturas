@@ -69,6 +69,9 @@ jugadas que añadiste tú y las que borraste a propósito. La biblioteca tiene b
 importar tildes ni mayúsculas).
 
 ### Volver a aprender
+- **Por niveles** (biblioteca): en un curso que ya tienes, pulsa un nivel (Esencial, Avanzado…)
+  para **repasar** solo ese nivel, **practicarlo** sin tocar tu calendario o **volver a aprenderlo**
+  desde cero. Cada nivel muestra cuánto llevas aprendido.
 - **Volver a aprender desde cero** (menú ⋯ de cada repertorio): todas las jugadas vuelven a ser
   nuevas y las aprendes otra vez con pistas. Se puede deshacer.
 - **Volver a aprender desde aquí** (editor): solo las jugadas que cuelgan de esa posición.

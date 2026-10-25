@@ -25,6 +25,7 @@ const routes = [
       modo: query.get('modo') ?? 'repaso',
       desde: query.get('desde') ?? '',
       todo: query.get('todo') === '1',
+      nivel: query.has('nivel') ? Number(query.get('nivel')) : null,
     })],
   [/^#\/estadisticas/, (el) => renderStats(el)],
   [/^#\/partidas/, (el) => renderGames(el)],

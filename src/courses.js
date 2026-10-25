@@ -1,6 +1,6 @@
 // Añadir cursos de la biblioteca a tu colección, ampliarlos y actualizarlos.
 import { getData, addRepertoire, save } from './store.js';
-import { newRepertoire, importPgn, allLines, trainableKeys, deleteMove } from './repertoire.js';
+import { newRepertoire, importPgn, allLines, trainableKeys, deleteMove, resetKeys } from './repertoire.js';
 import { getCourse, coursePgn } from './library.js';
 
 // Huella del contenido del curso: si cambia (correcciones, líneas nuevas), hay actualización.
@@ -118,18 +118,49 @@ export function updateCourse(rep) {
   return rebuildCourse(rep, rep.source.level);
 }
 
-// Líneas y posiciones de cada nivel (acumulado), calculadas una vez.
-const statsCache = new Map();
-export function levelStats(course) {
-  if (!statsCache.has(course.id)) {
-    statsCache.set(
-      course.id,
-      course.levels.map((_, level) => {
-        const rep = newRepertoire(course.name, course.color);
-        importPgn(rep, coursePgn(course, level));
-        return { lines: allLines(rep).length, positions: trainableKeys(rep).length };
-      }),
+// Datos de cada nivel (acumulado: Avanzado incluye Esencial), calculados una vez.
+const levelCache = new Map();
+function levelData(course, level) {
+  const id = `${course.id}|${level}`;
+  if (!levelCache.has(id)) {
+    const rep = newRepertoire(course.name, course.color);
+    importPgn(rep, coursePgn(course, level));
+    const edges = new Set(
+      Object.entries(rep.positions).flatMap(([key, pos]) => pos.moves.map((m) => `${key}|${m.uci}`)),
     );
+    const keys = new Set(trainableKeys(rep));
+    levelCache.set(id, { edges, keys, lines: allLines(rep).length, positions: keys.size });
   }
-  return statsCache.get(course.id);
+  return levelCache.get(id);
+}
+
+export function levelStats(course) {
+  return course.levels.map((_, level) => {
+    const { lines, positions } = levelData(course, level);
+    return { lines, positions };
+  });
+}
+
+// Jugadas ("posición|uci") que forman un nivel: sirven para entrenar solo ese nivel.
+export function levelEdges(course, level) {
+  return levelData(course, level).edges;
+}
+
+// Cuánto llevas aprendido de un nivel en tu repertorio.
+export function levelProgress(rep, level, now = Date.now()) {
+  const course = getCourse(rep.source?.course);
+  if (!course) return { total: 0, learned: 0, pct: 0 };
+  const mine = new Set(trainableKeys(rep));
+  const keys = [...levelData(course, level).keys].filter((k) => mine.has(k));
+  const learned = keys.filter((k) => rep.cards[k] && rep.cards[k].due > now).length;
+  return { total: keys.length, learned, pct: keys.length ? Math.round((learned / keys.length) * 100) : 0 };
+}
+
+// Vuelve a aprender un nivel desde cero: sus jugadas vuelven a ser nuevas.
+export function relearnLevel(rep, level) {
+  const course = getCourse(rep.source?.course);
+  if (!course) return 0;
+  const count = resetKeys(rep, levelData(course, level).keys);
+  save(rep);
+  return count;
 }

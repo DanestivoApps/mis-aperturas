@@ -48,3 +48,19 @@ export function weakLines(rep, lines) {
   }
   return [...chosen.values()];
 }
+
+// Pendientes y nuevas contando solo las posiciones de estas líneas (p. ej. un nivel o un tramo).
+export function scopeStats(rep, lines, { fromIndex = 0, now = Date.now() } = {}) {
+  const keys = new Set();
+  for (const line of lines) {
+    for (let i = fromIndex; i < line.length; i++) if (isUserTurn(rep, line[i].from)) keys.add(line[i].from);
+  }
+  let due = 0;
+  let fresh = 0;
+  for (const key of keys) {
+    const card = rep.cards[key];
+    if (!card) fresh++;
+    else if (card.due <= now) due++;
+  }
+  return { total: keys.size, due, fresh };
+}

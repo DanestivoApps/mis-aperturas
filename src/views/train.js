@@ -6,7 +6,9 @@ import { Chess } from 'chess.js';
 import { h, fill } from '../dom.js';
 import { getRepertoire, getData, getSettings, save, recordAnswer } from '../store.js';
 import { allLines, isUserTurn, repStats, stepLabel, START_FEN } from '../repertoire.js';
-import { lineId, pickSrsLine, weakLines } from '../session.js';
+import { lineId, pickSrsLine, weakLines, scopeStats } from '../session.js';
+import { getCourse, LEVELS } from '../library.js';
+import { levelEdges } from '../courses.js';
 import { newCard, gradeCorrect, gradeWrong, describeDue } from '../srs.js';
 import { createBoard, arrow } from '../board.js';
 import { colorToMove, destsFor, squaresOf, tryMove, uciOf } from '../chess-utils.js';
@@ -20,7 +22,7 @@ const MODES = {
   errores: 'Repaso de errores: las posiciones que más fallas. No cambia tus fechas de repaso.',
 };
 
-export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = false }) {
+export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = false, nivel = null }) {
   const rep = getRepertoire(id);
   if (!rep) {
     root.append(h('section', { class: 'page' }, h('h1', null, 'Repertorio no encontrado'), h('a', { href: '#/' }, '← Volver')));
@@ -30,8 +32,16 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const srs = modo === 'repaso'; // solo el repaso toca el calendario
   const settings = getSettings();
   const prefix = desde ? desde.split(',') : [];
+  // Con `nivel`, solo las líneas de ese nivel del curso (Esencial, Avanzado...).
+  const course = nivel != null ? getCourse(rep.source?.course) : null;
+  const levelName = course ? LEVELS[nivel]?.name : null;
+  const edges = course ? levelEdges(course, nivel) : null;
+  const levelQuery = course ? `&nivel=${nivel}` : '';
   const lines = allLines(rep).filter(
-    (line) => line.length > prefix.length && prefix.every((uci, i) => line[i].move.uci === uci),
+    (line) =>
+      line.length > prefix.length &&
+      prefix.every((uci, i) => line[i].move.uci === uci) &&
+      (!edges || line.every((s) => edges.has(`${s.from}|${s.move.uci}`))),
   );
 
   // Temporizadores protegidos: si salimos de la vista no se ejecutan.
@@ -80,6 +90,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     h('div', { class: 'panel-head' },
       h('a', { href: '#/', class: 'back' }, '← Repertorios'),
       h('h1', null, h('span', { class: `piece-badge ${rep.color}` }, rep.color === 'white' ? '♔' : '♚'), rep.name),
+      levelName ? h('span', { class: 'chip due level-chip' }, `Nivel ${levelName}`) : null,
       h('p', { class: 'muted small' }, MODES[modo], prefix.length ? ' Desde la posición elegida.' : ''),
     ),
     counters,
@@ -110,7 +121,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   }
 
   function updateCounters() {
-    const s = repStats(rep);
+    const s = scopeStats(rep, lines, { fromIndex: prefix.length });
     fill(counters,
       srs
         ? [
@@ -375,7 +386,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     const total = session.correct + session.wrong;
     const pct = total ? Math.round((session.correct / total) * 100) : 0;
     const nextDue = Object.values(rep.cards).reduce((min, c) => Math.min(min, c.due), Infinity);
-    const s = repStats(rep);
+    const s = scopeStats(rep, lines, { fromIndex: prefix.length });
     fill(counters);
     fill(comment);
     fill(openingEl);
@@ -403,7 +414,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
         ? h('button', { class: 'btn', onClick: restart }, `Aprender más jugadas nuevas (${s.fresh})`)
         : null,
       srs
-        ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre` }, '↺ Repasar todas las líneas otra vez')
+        ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre${levelQuery}` }, levelName ? `↺ Practicar el nivel ${levelName} otra vez` : '↺ Repasar todas las líneas otra vez')
         : h('button', { class: 'btn', onClick: restart }, '↺ Otra vuelta'),
       nextRep ? h('a', { class: 'btn ghost', href: '#/' }, 'Terminar') : null,
     );

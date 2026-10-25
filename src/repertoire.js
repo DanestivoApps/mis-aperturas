@@ -406,16 +406,21 @@ export function subtreeKeys(rep, from) {
 // sincronización no recupere el progreso antiguo desde otro dispositivo.
 // Devuelve cuántas jugadas se han reiniciado.
 export function resetProgress(rep, { from = null, now = Date.now() } = {}) {
-  let count = 0;
   if (!from || from === ROOT_KEY) {
-    count = Object.keys(rep.cards).length;
+    const count = Object.keys(rep.cards).length;
     rep.cards = {};
     rep.progressResetAt = now;
     rep.resets = {};
     return count;
   }
+  return resetKeys(rep, subtreeKeys(rep, from), now);
+}
+
+// Reinicia el progreso de unas posiciones concretas (solo cuentan las tuyas con jugada).
+export function resetKeys(rep, keys, now = Date.now()) {
+  let count = 0;
   rep.resets ??= {};
-  for (const key of subtreeKeys(rep, from)) {
+  for (const key of keys) {
     if (!isUserTurn(rep, key) || !rep.positions[key]?.moves.length) continue;
     if (rep.cards[key]) {
       delete rep.cards[key];

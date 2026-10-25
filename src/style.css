@@ -1468,9 +1468,37 @@ details.card > summary {
   color: var(--accent);
 }
 
-.level.have {
-  opacity: 0.65;
-  cursor: default;
+.level.have strong {
+  color: var(--ok);
+}
+
+.level-bar {
+  display: block;
+  width: 80%;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.level-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.level-pct {
+  font-size: 0.72rem;
+}
+
+.level-help {
+  margin: 0;
+}
+
+.level-chip {
+  display: inline-block;
+  margin-top: 6px;
 }
 
 .level.have strong::after {

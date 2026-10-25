@@ -128,3 +128,36 @@ describe('restaurar el curso original', () => {
     expect(rep.positions[ROOT_KEY].moves.map((m) => m.san)).toEqual(['d4', 'c4']);
   });
 });
+
+describe('niveles de un curso que ya tienes', () => {
+  it('cada nivel tiene sus líneas, su progreso y se puede volver a aprender', async () => {
+    localStorage.clear();
+    vi.resetModules();
+    const courses = await import('../src/courses.js');
+    const library = await import('../src/library.js');
+    const { allLines } = await import('../src/repertoire.js');
+    const course = library.getCourse('italiana');
+    const rep = courses.addCourse(course, 1);
+    const stats = courses.levelStats(course);
+
+    // Las líneas de tu repertorio que usan solo jugadas del nivel Esencial son las del nivel.
+    const edges = courses.levelEdges(course, 0);
+    const lines = allLines(rep).filter((l) => l.every((s) => edges.has(`${s.from}|${s.move.uci}`)));
+    expect(lines.length).toBe(stats[0].lines);
+
+    // Aprende todo el nivel Esencial (repaso futuro): 100 %.
+    const future = Date.now() + 1e9;
+    for (const l of lines) for (const s of l) if (rep.positions[s.from] && s.from.split(' ')[1] === 'w') {
+      rep.cards[s.from] = { reps: 1, interval: 1, ease: 2.5, due: future, lapses: 0, last: Date.now() };
+    }
+    expect(courses.levelProgress(rep, 0).pct).toBe(100);
+    expect(courses.levelProgress(rep, 1).pct).toBeLessThan(100);
+
+    // Volver a aprender el Esencial: su progreso vuelve a 0 y se puede deshacer.
+    const snap = courses.repSnapshot(rep);
+    expect(courses.relearnLevel(rep, 0)).toBeGreaterThan(0);
+    expect(courses.levelProgress(rep, 0).pct).toBe(0);
+    courses.restoreSnapshot(rep, snap);
+    expect(courses.levelProgress(rep, 0).pct).toBe(100);
+  });
+});
