@@ -120,6 +120,11 @@ export function renderLibrary(root) {
               renderGrid();
             },
           }, `Añadir · ${LEVELS[level].name}`),
+          h('a', {
+            class: 'btn',
+            href: `#/probar/${course.id}`,
+            title: 'Juega la línea principal con sus explicaciones, sin añadir el curso',
+          }, '▶ Probar la línea principal'),
         );
         return;
       }

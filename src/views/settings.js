@@ -2,6 +2,7 @@
 import { h, fill, toast } from '../dom.js';
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from '../store.js';
 import { BOARD_THEMES, applyBoardTheme, createBoard } from '../board.js';
+import { THEMES, applyTheme } from '../theme.js';
 import { play } from '../sound.js';
 import { TOKEN_URL } from '../lichess.js';
 import { syncNow, syncError, TOKEN_URL as SYNC_TOKEN_URL } from '../sync.js';
@@ -74,6 +75,17 @@ export function renderSettings(root) {
             },
           }),
         ),
+        h('label', { class: 'field' },
+          h('span', null, 'Objetivo diario (jugadas respondidas; 0 = sin objetivo)'),
+          h('input', {
+            type: 'number', min: '0', max: '500', step: '5', value: String(s.dailyGoal),
+            onChange: (e) => {
+              const n = Math.max(0, Math.min(500, Math.round(Number(e.target.value)) || 0));
+              e.target.value = n;
+              updateSettings({ dailyGoal: n });
+            },
+          }),
+        ),
         h('div', { class: 'field' },
           h('span', null, 'Velocidad de las jugadas del rival'),
           segmented(SPEEDS, s.opponentDelay, (v) => updateSettings({ opponentDelay: v })),
@@ -81,6 +93,19 @@ export function renderSettings(root) {
         toggle('skipKnown', 'Saltar las jugadas que ya sabes',
           'En el repaso, tus jugadas que no tocan repasar se juegan solas. Más rápido, pero repasas menos.'),
         toggle('sound', 'Sonidos', 'Jugadas, aciertos y fallos.', (on) => on && play('correct')),
+        toggle('vibrate', 'Vibrar al fallar', 'En los móviles que lo permiten (Android).', (on) => on && navigator.vibrate?.(120)),
+      ),
+
+      h('div', { class: 'card settings-card' },
+        h('h3', null, 'Apariencia'),
+        h('div', { class: 'field' },
+          h('span', null, 'Tema'),
+          segmented(THEMES, s.theme, (v) => {
+            updateSettings({ theme: v });
+            applyTheme(v);
+          }),
+        ),
+        h('p', { class: 'muted small' }, 'En automático, la app se pone clara u oscura según tu sistema.'),
       ),
 
       h('div', { class: 'card settings-card' },
@@ -155,6 +180,7 @@ export function renderSettings(root) {
             const keep = ['lichessToken', 'syncToken', 'syncGistId', 'lastSync', 'deviceId'];
             updateSettings({ ...DEFAULT_SETTINGS, ...Object.fromEntries(keep.map((k) => [k, getSettings()[k]])) });
             applyBoardTheme();
+            applyTheme();
             window.dispatchEvent(new HashChangeEvent('hashchange'));
           },
         }, 'Restablecer ajustes'),

@@ -12,3 +12,17 @@ export function toSpanish(san) {
 export function san(move) {
   return getSettings().notation === 'en' ? move : toSpanish(move);
 }
+
+// Para las pistas: "mueve el caballo marcado".
+const PIECES = {
+  p: 'el peón marcado',
+  n: 'el caballo marcado',
+  b: 'el alfil marcado',
+  r: 'la torre marcada',
+  q: 'la dama marcada',
+  k: 'el rey marcado',
+};
+
+export function pieceHint(type) {
+  return PIECES[type] ?? 'la pieza marcada';
+}

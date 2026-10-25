@@ -52,6 +52,19 @@ describe('historial y racha', () => {
   });
 });
 
+describe('objetivo diario', () => {
+  it('cuenta las respuestas de hoy de todos tus dispositivos', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 21, 18));
+    expect(store.todayCount()).toBe(0);
+    expect(store.recordAnswer(true)).toBe(1);
+    expect(store.recordAnswer(false)).toBe(2);
+    store.getData().historyOthers.movil = { '2026-10-21': { ok: 5, bad: 1 }, '2026-10-20': { ok: 9, bad: 0 } };
+    expect(store.todayCount()).toBe(8);
+    expect(store.getSettings().dailyGoal).toBe(20);
+  });
+});
+
 describe('copias de seguridad', () => {
   it('no incluye el token de Lichess', () => {
     store.updateSettings({ lichessToken: 'secreto' });

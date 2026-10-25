@@ -21,8 +21,31 @@
   color-scheme: light;
 }
 
+/* Oscuro: como el sistema (tema automático) o elegido en Ajustes. */
+:root[data-theme='dark'] {
+  --bg: #1d1b19;
+  --surface: #272522;
+  --surface-2: #312e2a;
+  --border: #403c37;
+  --text: #e9e5df;
+  --muted: #a39b90;
+  --accent: #629924;
+  --accent-text: #ffffff;
+  --accent-soft: #2c3a20;
+  --info: #7fb0ea;
+  --info-soft: #22303f;
+  --warn: #f0b552;
+  --warn-soft: #3d3020;
+  --bad: #f08273;
+  --bad-soft: #432623;
+  --ok: #8fd17f;
+  --ok-soft: #233823;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #1d1b19;
     --surface: #272522;
     --surface-2: #312e2a;
@@ -1588,4 +1611,133 @@ details.card > summary {
   background: var(--surface);
   color: var(--text);
   font: inherit;
+}
+
+/* ---------- Resumen de fallos ---------- */
+.train-summary:empty {
+  display: none;
+}
+
+.mistake-list {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.mistake-list li {
+  margin: 6px 0;
+  line-height: 1.45;
+}
+
+.mistake-context {
+  color: var(--muted);
+}
+
+.mistakes strong {
+  color: var(--ok);
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-btn:hover {
+  color: var(--text);
+}
+
+/* Los atajos de teclado solo tienen sentido con teclado y ratón. */
+@media (hover: none) {
+  .keys-hint {
+    display: none;
+  }
+}
+
+.shortcuts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0;
+  align-items: center;
+}
+
+.shortcuts dd {
+  margin: 0;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 2.2em;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font: 600 0.85rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-align: center;
+}
+
+/* ---------- Contrarreloj ---------- */
+.drill-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.drill-clock {
+  font: 700 2.4rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.drill-clock.low {
+  color: var(--bad);
+}
+
+.drill-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.drill-controls .segmented {
+  flex: 1 1 220px;
+}
+
+/* ---------- Objetivo diario ---------- */
+.goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  max-width: 420px;
+  font-size: 0.88rem;
+}
+
+.goal .progress {
+  flex: 1;
+  min-width: 80px;
+}
+
+.goal.done .progress span {
+  background: var(--ok);
+}
+
+.goal-text {
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.goal.done .goal-text {
+  color: var(--ok);
+  font-weight: 600;
 }

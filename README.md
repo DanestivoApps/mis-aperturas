@@ -66,7 +66,8 @@ las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **A
 
 Si se mejora un curso que ya tienes, la app avisa y lo actualiza conservando tu progreso, las
 jugadas que añadiste tú y las que borraste a propósito. La biblioteca tiene buscador (sin
-importar tildes ni mayúsculas).
+importar tildes ni mayúsculas) y un botón **▶ Probar la línea principal** para jugar un curso
+(primero con flechas y explicaciones, luego sin ayuda) antes de añadirlo.
 
 ### Volver a aprender
 - **Por niveles** (biblioteca): en un curso que ya tienes, pulsa un nivel (Esencial, Avanzado…)
@@ -123,21 +124,30 @@ pega un **PGN**, y las compara con tus repertorios:
 - **Práctica libre**: todas las líneas (o las que salen de una posición) en orden aleatorio,
   sin tocar el calendario. Las falladas se repiten al final.
 - **Errores**: solo las líneas con las posiciones que más fallas, hasta que las consolides.
-- Sonidos, animación de acierto/fallo y nombre de la apertura mientras entrenas.
+- **Resumen de fallos** al terminar: qué jugaste, cuál era la buena y un enlace a la posición.
+  Con **Repasar mis fallos** vuelves a jugar al momento esas líneas (sin tocar el calendario).
+- **Pista en dos pasos**: primero te marca la pieza que hay que mover; si vuelves a pedirla, la jugada.
+- **⏱ Contrarreloj**: posiciones sueltas de tu repertorio, sin orden, en 1, 3 o 5 minutos.
+  Cada acierto suma un punto y cada fallo resta 10 segundos. Guarda tu récord (también por
+  nivel) y no cambia tus fechas de repaso.
+- **Objetivo diario**: jugadas que quieres responder cada día; el inicio muestra cuánto llevas.
+- Sonidos, vibración al fallar (Android), animación de acierto/fallo y nombre de la apertura.
 
 ### Estadísticas
 Racha de días, precisión, respuestas por día (30 días), previsión de repasos (14 días),
 progreso por repertorio (nuevas / aprendiendo / consolidadas) y las posiciones que más fallas.
 
 ### Ajustes
-Jugadas nuevas por sesión, velocidad del rival, saltar las jugadas que ya sabes, sonidos,
-colores del tablero, coordenadas, evaluación y token de Lichess.
+Jugadas nuevas por sesión, objetivo diario, velocidad del rival, saltar las jugadas que ya
+sabes, sonidos, vibración, tema claro u oscuro (o automático), colores del tablero, coordenadas,
+evaluación y token de Lichess.
 
 ### Datos
 Todo vive en el `localStorage` del navegador. Desde el inicio puedes descargar o restaurar
 una copia de seguridad en JSON (la copia no incluye tu token de Lichess).
 
-Atajos: `←` `→` `Inicio` `Fin` `F` (girar) en el editor; `H` (pista) y `Enter` (siguiente línea) al entrenar.
+Atajos: `←` `→` `Inicio` `Fin` `F` (girar) en el editor; al entrenar, `H` (pista), `R` (repetir línea),
+`S` (saltar línea), `Enter` (siguiente línea) y `?` (lista de atajos).
 
 ## Token de Lichess (para el explorador)
 
@@ -155,7 +165,9 @@ La evaluación y la importación de estudios públicos funcionan sin token.
 | `src/sync.js` | Sincronización entre dispositivos (gist privado de GitHub) |
 | `src/notation.js` | Notación española (C, A, T, D, R) o inglesa |
 | `src/srs.js` | Repetición espaciada (variante de SM-2) |
-| `src/session.js` | Qué línea toca repasar y qué posiciones son débiles |
+| `src/session.js` | Qué línea toca repasar, posiciones débiles y de la contrarreloj |
+| `src/feedback.js` | Al responder: historial, objetivo diario y vibración |
+| `src/theme.js` | Tema claro, oscuro o automático |
 | `src/games.js` | Comparar partidas con el repertorio |
 | `src/review.js` | Revisión del repertorio con la evaluación de Lichess |
 | `src/chesscom.js` | Descarga de partidas de Chess.com |
@@ -166,7 +178,7 @@ La evaluación y la importación de estudios públicos funcionan sin token.
 | `src/openings.js` | Nombres de aperturas (`src/data/openings.json`, se carga bajo demanda) |
 | `src/sound.js` | Sonidos sintetizados |
 | `src/chart.js` | Gráfico de columnas de las estadísticas |
-| `src/views/*.js` | Pantallas: inicio, editor, entrenamiento, estadísticas, ajustes |
+| `src/views/*.js` | Pantallas: inicio, biblioteca, editor, entrenamiento, contrarreloj, partidas, estadísticas, ajustes |
 | `scripts/build-openings.mjs` | Regenera `openings.json` desde los TSV de lichess-org/chess-openings |
 | `public/` | Manifiesto, iconos y service worker (app instalable y sin conexión) |
 | `tests/` | Tests con Vitest |

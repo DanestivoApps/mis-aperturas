@@ -6,6 +6,7 @@
 //  - historial: cada dispositivo aporta el suyo y las estadísticas los suman.
 import { getData, getSettings, updateSettings, save, onSave } from './store.js';
 import { trainableKeys, wasReset } from './repertoire.js';
+import { mergeBest } from './session.js';
 
 const trainableKeysOf = (rep) => trainableKeys(rep);
 
@@ -52,6 +53,9 @@ function mergeRep(local, remote) {
     ),
   });
   if (!base.source) delete local.source;
+  // Récords de la contrarreloj: el mejor de cada dispositivo.
+  const best = mergeBest(local.drillBest, remote.drillBest);
+  if (Object.keys(best).length) local.drillBest = best;
   // Sin reinicios no se añaden campos vacíos (si no, cada sincronización parecería un cambio).
   if (!local.progressResetAt) delete local.progressResetAt;
   if (!Object.keys(local.resets).length) delete local.resets;

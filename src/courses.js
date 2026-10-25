@@ -24,6 +24,13 @@ export function addCourse(course, level) {
   return rep;
 }
 
+// Para probar un curso sin añadirlo: el repertorio en memoria (no se guarda).
+export function previewRepertoire(course, level = 0) {
+  const rep = newRepertoire(course.name, course.color);
+  importPgn(rep, coursePgn(course, level));
+  return rep;
+}
+
 // ¿Hay una versión mejorada del curso del que viene este repertorio?
 export function isOutdated(rep) {
   const course = getCourse(rep.source?.course);

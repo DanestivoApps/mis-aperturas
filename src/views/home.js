@@ -1,6 +1,6 @@
 // Inicio: lista de repertorios, crear nuevos, copias de seguridad y acceso a la biblioteca.
 import { h, toast, download, safeFilename, openDialog } from '../dom.js';
-import { getData, addRepertoire, removeRepertoire, save, exportBackup, importBackup, streak } from '../store.js';
+import { getData, addRepertoire, removeRepertoire, save, exportBackup, importBackup, streak, todayCount } from '../store.js';
 import { newRepertoire, importPgn, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
 import { describeDue } from '../srs.js';
 import { LEVELS } from '../library.js';
@@ -40,6 +40,7 @@ export function renderHome(root) {
           h('h1', null, 'Tus repertorios'),
           h('p', { class: 'muted' }, summary,
             days ? h('span', { class: 'streak', title: 'Días seguidos entrenando' }, ` · 🔥 ${days} ${days === 1 ? 'día' : 'días'} seguidos`) : null),
+          reps.length ? goalMeter(data.settings.dailyGoal) : null,
         ),
         firstPending && reps.length > 1
           ? h('a', { class: 'btn primary big', href: `#/entrenar/${firstPending.id}?todo=1` }, `Repasar todo (${allPending})`)
@@ -96,6 +97,20 @@ export function renderHome(root) {
   );
 }
 
+// Jugadas respondidas hoy frente al objetivo diario (Ajustes).
+function goalMeter(goal) {
+  if (!goal) return null;
+  const count = todayCount();
+  const done = count >= goal;
+  const pct = Math.min(100, Math.round((count / goal) * 100));
+  return h('div', { class: `goal ${done ? 'done' : ''}`, title: 'Jugadas respondidas hoy. Cambia el objetivo en Ajustes.' },
+    h('span', { 'aria-hidden': 'true' }, '🎯'),
+    h('div', { class: 'progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(goal), 'aria-valuenow': String(Math.min(count, goal)), 'aria-label': 'Objetivo de hoy' },
+      h('span', { style: `width:${pct}%` })),
+    h('span', { class: 'goal-text' }, done ? `Objetivo de hoy cumplido (${count}/${goal}) ✓` : `Hoy: ${count}/${goal} jugadas`),
+  );
+}
+
 function rerender() {
   window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
@@ -137,6 +152,9 @@ function repCard(rep) {
       h('a', { class: 'btn', href: `#/editar/${rep.id}` }, 'Editar'),
       s.total ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre` }, 'Práctica libre') : null,
       weak ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=errores`, title: 'Posiciones que sueles fallar' }, `Errores (${weak})`) : null,
+      s.total
+        ? h('a', { class: 'btn', href: `#/contrarreloj/${rep.id}`, title: 'Posiciones sueltas de este repertorio contra el reloj' }, '⏱ Contrarreloj')
+        : null,
     ),
   );
 }

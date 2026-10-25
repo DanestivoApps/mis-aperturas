@@ -102,6 +102,17 @@ describe('cursos de la biblioteca', () => {
   });
 });
 
+describe('probar un curso', () => {
+  it('crea el repertorio en memoria sin añadirlo a tu colección', () => {
+    const course = library.getCourse('italiana');
+    const rep = courses.previewRepertoire(course);
+    expect(rep.color).toBe('white');
+    expect(trainableKeys(rep).length).toBeGreaterThan(5);
+    expect(store.getData().repertoires).toHaveLength(0);
+    expect(courses.ownedFrom('italiana')).toBeUndefined();
+  });
+});
+
 describe('restaurar el curso original', () => {
   it('quita tus jugadas, recupera las borradas y conserva el progreso', async () => {
     localStorage.clear();

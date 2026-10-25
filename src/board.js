@@ -43,6 +43,8 @@ export function createBoard(el, config) {
     highlight: { lastMove: true, check: true },
     premovable: { enabled: false },
     draggable: { enabled: true, showGhost: true },
+    // Solo en desarrollo: acepta clics simulados por script, para poder probar la app automáticamente.
+    trustAllEvents: import.meta.env.DEV,
     ...config,
   });
 }

@@ -10,6 +10,10 @@ export const DEFAULT_SETTINGS = {
   coordinates: true,
   boardTheme: 'brown',
   skipKnown: false, // en el repaso, juega solas tus jugadas que no tocan
+  vibrate: true, // vibra al fallar (en los móviles que lo permiten)
+  dailyGoal: 20, // jugadas respondidas al día (0 = sin objetivo)
+  theme: 'auto', // 'auto' (como el sistema), 'light' o 'dark'
+  drillDuration: 180, // segundos de la contrarreloj
   showEval: true,
   lichessToken: '',
   explorerDb: 'masters',
@@ -121,12 +125,19 @@ export function dayKey(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
+// Anota una respuesta de hoy. Devuelve cuántas llevas hoy entre todos tus dispositivos.
 export function recordAnswer(ok) {
   const key = dayKey();
   const day = (data.history[key] ??= { ok: 0, bad: 0 });
   if (ok) day.ok++;
   else day.bad++;
   save();
+  return todayCount();
+}
+
+export function todayCount() {
+  const day = combinedHistory()[dayKey()];
+  return day ? day.ok + day.bad : 0;
 }
 
 // Historial de todos tus dispositivos sumado por día.

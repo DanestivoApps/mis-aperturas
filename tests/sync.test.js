@@ -165,6 +165,19 @@ describe('sincronizar con GitHub', () => {
   });
 });
 
+describe('récords de la contrarreloj', () => {
+  it('se queda con el mejor de cada dispositivo', () => {
+    const local = rep('r1', 200, { drillBest: { 180: 12, 60: 5 } });
+    const remote = rep('r1', 100, { drillBest: { 180: 20 } });
+    expect(sync.mergeRepertoires([local], [remote], {})[0].drillBest).toEqual({ 180: 20, 60: 5 });
+  });
+
+  it('sin récords no añade el campo', () => {
+    const [merged] = sync.mergeRepertoires([rep('r1', 100)], [rep('r1', 100)], {});
+    expect(merged).not.toHaveProperty('drillBest');
+  });
+});
+
 describe('reinicios de progreso al sincronizar', () => {
   it('un reinicio en otro dispositivo borra el progreso antiguo, no el nuevo', () => {
     const local = rep('r1', 100, { cards: { [A]: card(50, 5) } });

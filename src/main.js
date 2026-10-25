@@ -13,6 +13,8 @@ import { renderStats } from './views/stats.js';
 import { renderSettings } from './views/settings.js';
 import { renderGames } from './views/games.js';
 import { renderLibrary } from './views/library.js';
+import { renderDrill } from './views/drill.js';
+import { applyTheme } from './theme.js';
 
 const app = document.getElementById('app');
 let cleanup = null;
@@ -27,6 +29,9 @@ const routes = [
       todo: query.get('todo') === '1',
       nivel: query.has('nivel') ? Number(query.get('nivel')) : null,
     })],
+  [/^#\/probar\/([^/?]+)/, (el, match) => renderTrain(el, { curso: match[1] })],
+  [/^#\/contrarreloj\/([^/?]+)/, (el, match, query) =>
+    renderDrill(el, { id: match[1], nivel: query.has('nivel') ? Number(query.get('nivel')) : null })],
   [/^#\/estadisticas/, (el) => renderStats(el)],
   [/^#\/partidas/, (el) => renderGames(el)],
   [/^#\/biblioteca/, (el) => renderLibrary(el)],
@@ -50,7 +55,9 @@ function route() {
     }
   }
   // Marca la sección activa en la barra superior.
-  const section = ['biblioteca', 'estadisticas', 'partidas', 'ajustes'].find((s) => path.startsWith(`#/${s}`)) ?? 'home';
+  const section = path.startsWith('#/probar')
+    ? 'biblioteca'
+    : ['biblioteca', 'estadisticas', 'partidas', 'ajustes'].find((s) => path.startsWith(`#/${s}`)) ?? 'home';
   document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('on', a.dataset.section === section));
   window.scrollTo(0, 0);
 }
@@ -62,6 +69,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
+applyTheme();
 applyBoardTheme();
 window.addEventListener('hashchange', route);
 route();

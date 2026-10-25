@@ -64,3 +64,42 @@ export function scopeStats(rep, lines, { fromIndex = 0, now = Date.now() } = {})
   }
   return { total: keys.size, due, fresh };
 }
+
+// Quita las líneas repetidas conservando el orden (p. ej. varios fallos en la misma línea).
+export function uniqueLines(lines) {
+  const seen = new Set();
+  return lines.filter((line) => {
+    const id = lineId(line);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
+// Para la contrarreloj: cada posición en la que te toca mover, con el camino más corto que lleva a ella.
+export function drillPositions(rep, lines) {
+  const best = new Map();
+  for (const line of lines) {
+    line.forEach((step, i) => {
+      if (!isUserTurn(rep, step.from)) return;
+      const prev = best.get(step.from);
+      if (!prev || i < prev.path.length) best.set(step.from, { key: step.from, path: line.slice(0, i) });
+    });
+  }
+  return [...best.values()];
+}
+
+// Récord de la contrarreloj por duración ({ '180': 23 }): se queda el mayor de los dos.
+export function mergeBest(a = {}, b = {}) {
+  const best = { ...a };
+  for (const [k, v] of Object.entries(b)) best[k] = Math.max(best[k] ?? 0, v);
+  return best;
+}
+
+export function shuffle(list) {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  return list;
+}
