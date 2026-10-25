@@ -22,7 +22,7 @@ const MODES = {
   repaso: 'Repaso con repetición espaciada.',
   libre: 'Práctica libre: no cambia tus fechas de repaso.',
   errores: 'Repaso de errores: las posiciones que más fallas. No cambia tus fechas de repaso.',
-  prueba: 'Prueba del curso: su línea principal con la idea de cada jugada. No se guarda nada.',
+  prueba: 'Vista previa: juegas la línea principal del curso con la idea de cada jugada. No se añade a tus repertorios.',
 };
 
 const SHORTCUTS = [
@@ -30,6 +30,9 @@ const SHORTCUTS = [
   ['H', 'Pista: primero la pieza y, si vuelves a pulsar, la jugada'],
   ['R', 'Repetir la línea desde el principio'],
   ['S', 'Saltar la línea'],
+  ['← →', 'Jugada anterior / siguiente de la línea'],
+  ['Inicio / Fin', 'Principio de la línea / posición actual'],
+  ['F', 'Girar el tablero'],
   ['?', 'Ver estos atajos'],
 ];
 
@@ -124,7 +127,6 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
         : h('a', { href: '#/', class: 'back' }, '← Repertorios'),
       h('h1', null, h('span', { class: `piece-badge ${rep.color}` }, rep.color === 'white' ? '♔' : '♚'), rep.name),
       levelName ? h('span', { class: 'chip due level-chip' }, `Nivel ${levelName}`) : null,
-      preview ? h('span', { class: 'chip due level-chip' }, 'Prueba gratuita del curso') : null,
       modeText,
     ),
     counters,
@@ -136,7 +138,29 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     h('button', { type: 'button', class: 'link-btn keys-hint', onClick: showShortcuts }, '⌨ Atajos de teclado (?)'),
   );
 
-  root.append(h('section', { class: 'layout' }, h('div', { class: 'board-col' }, boardEl), panel));
+  // Navegación por las jugadas de la línea: mirar atrás no cambia nada.
+  let viewPly = null; // jugada que estás mirando (null = la posición actual)
+  let liveShapes = []; // flechas de la posición actual, para recuperarlas al volver
+  const navBtns = {
+    first: h('button', { class: 'icon-btn', title: 'Principio de la línea (Inicio)', onClick: () => view(0) }, '⏮'),
+    back: h('button', { class: 'icon-btn', title: 'Jugada anterior (←)', onClick: () => step(-1) }, '◀'),
+    forward: h('button', { class: 'icon-btn', title: 'Jugada siguiente (→)', onClick: () => step(1) }, '▶'),
+    last: h('button', { class: 'icon-btn', title: 'Posición actual (Fin)', onClick: () => view(null) }, '⏭'),
+  };
+  const navNote = h('p', { class: 'muted small nav-note', hidden: true },
+    'Estás viendo una jugada anterior. Pulsa ⏭ para volver a la posición actual.');
+
+  root.append(h('section', { class: 'layout' },
+    h('div', { class: 'board-col' },
+      boardEl,
+      h('div', { class: 'board-controls' },
+        Object.values(navBtns),
+        h('button', { class: 'icon-btn', title: 'Girar el tablero (F)', onClick: () => board.toggleOrientation() }, '⟲'),
+      ),
+      navNote,
+    ),
+    panel,
+  ));
   loadOpenings();
 
   const board = createBoard(boardEl, {
@@ -175,9 +199,68 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
 
   function updateLineText() {
     const played = cur.line.slice(0, cur.idx);
-    moveText.textContent = played.length ? played.map((s, i) => stepLabel(rep, s, i === 0, san)).join(' ') : '—';
+    const shown = shownPly();
+    fill(moveText, played.length
+      ? played.map((s, i) => h('button', {
+          type: 'button',
+          class: `mv ${i + 1 === shown ? 'on' : ''}`,
+          title: 'Ver esta posición',
+          onClick: () => view(i + 1),
+        }, stepLabel(rep, s, i === 0, san)))
+      : '—');
     const opening = openingForPath(played);
     fill(openingEl, opening ? [h('span', { class: 'eco' }, opening.eco), ' ', opening.name] : null);
+    updateNav();
+  }
+
+  // ---------- Navegación por la línea ----------
+  const shownPly = () => viewPly ?? cur?.idx ?? 0;
+
+  // Flechas de la posición actual: si estás mirando atrás, se guardan para cuando vuelvas.
+  function setShapes(shapes) {
+    liveShapes = shapes;
+    if (viewPly === null) board.setAutoShapes(shapes);
+  }
+
+  // Muestra la posición tras `ply` jugadas de la línea; null (o la última) vuelve a la actual.
+  function view(ply) {
+    if (!cur) return;
+    if (ply === null || ply >= cur.idx) {
+      if (viewPly === null) return;
+      viewPly = null;
+      const last = cur.line[cur.idx - 1];
+      syncBoard(last ? squaresOf(last.move.uci) : undefined, cur.awaiting);
+      board.setAutoShapes(liveShapes);
+    } else {
+      viewPly = Math.max(0, ply);
+      const chess = new Chess();
+      for (const s of cur.line.slice(0, viewPly)) {
+        const [from, to] = squaresOf(s.move.uci);
+        chess.move({ from, to, promotion: s.move.uci[4] });
+      }
+      const last = cur.line[viewPly - 1];
+      board.set({
+        fen: chess.fen(),
+        turnColor: colorToMove(chess),
+        lastMove: last ? squaresOf(last.move.uci) : undefined,
+        check: chess.inCheck(),
+        movable: { color: undefined, dests: new Map() },
+      });
+      board.setAutoShapes([]);
+    }
+    updateLineText();
+  }
+
+  function step(delta) {
+    if (cur) view(shownPly() + delta);
+  }
+
+  function updateNav() {
+    const ply = shownPly();
+    navBtns.first.disabled = navBtns.back.disabled = !cur || ply <= 0;
+    navBtns.forward.disabled = navBtns.last.disabled = !cur || viewPly === null;
+    navNote.hidden = viewPly === null;
+    boardEl.classList.toggle('viewing', viewPly !== null);
   }
 
   // ---------- Elección de líneas ----------
@@ -218,6 +301,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       assist: session.assist,
     };
     fill(comment);
+    viewPly = null;
+    liveShapes = [];
     board.set({
       fen: START_FEN,
       turnColor: 'white',
@@ -270,6 +355,11 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
 
   function syncBoard(lastMove, movable) {
     const chess = cur.chess;
+    if (viewPly !== null) {
+      viewPly = null;
+      board.setAutoShapes(liveShapes);
+      updateNav();
+    }
     board.set({
       fen: chess.fen(),
       turnColor: colorToMove(chess),
@@ -295,13 +385,13 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       // Jugada nueva (o primera vuelta de la prueba): se enseña primero.
       cur.hinted = true;
       if (grading) session.newBudget--;
-      board.setAutoShapes([arrow(step.move.uci, 'green')]);
+      setShapes([arrow(step.move.uci, 'green')]);
       const label = stepLabel(rep, step, true, san);
       say(cur.assist ? `Juega ${label} (flecha verde).` : `Jugada nueva: memoriza ${label} y juégala.`, 'info');
       // La explicación se muestra antes de jugarla, para aprender la idea y no solo la jugada.
       if (step.move.comment) comment.append(h('p', { class: 'learn' }, '💡 ', step.move.comment));
     } else {
-      board.setAutoShapes([]);
+      setShapes([]);
       say('Tu turno: ¿qué jugarías aquí?');
     }
   }
@@ -317,7 +407,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       cur.awaiting = false;
       const clean = !cur.failed && !cur.hinted;
       gradeSuccess(step);
-      board.setAutoShapes([]);
+      setShapes([]);
       syncBoard([move.from, move.to], false);
       showComment(step.move);
       if (clean) {
@@ -354,7 +444,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       say(`No es ${san(move.san)}. La jugada de tu repertorio es ${san(step.move.san)}: juégala para seguir.`, 'bad');
     }
     syncBoard(prevMove, true);
-    board.setAutoShapes([arrow(step.move.uci, 'green')]);
+    setShapes([arrow(step.move.uci, 'green')]);
   }
 
   // La prueba de un curso no cuenta en tu historial.
@@ -400,17 +490,18 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   // Pista en dos pasos: primero la pieza que hay que mover y, si hace falta, la jugada.
   function showHint() {
     if (!cur?.awaiting) return;
+    view(null);
     const step = cur.line[cur.idx];
     const [from] = squaresOf(step.move.uci);
     if (!cur.hinted && !cur.failed && cur.hintLevel === 0) {
       cur.hintLevel = 1;
       registerFailure(step);
-      board.setAutoShapes([{ orig: from, brush: 'green' }]);
+      setShapes([{ orig: from, brush: 'green' }]);
       say(`Pista: mueve ${pieceHint(cur.chess.get(from)?.type)}. Si pulsas otra vez Pista, verás la jugada. Cuenta como fallo.`, 'warn');
       return;
     }
     cur.hintLevel = 2;
-    board.setAutoShapes([arrow(step.move.uci, 'green')]);
+    setShapes([arrow(step.move.uci, 'green')]);
     if (!cur.hinted) say(`Pista: ${stepLabel(rep, step, true, san)}.`, 'warn');
   }
 
@@ -498,6 +589,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
 
   function finish() {
     cur = null;
+    viewPly = null;
+    updateNav();
     board.set({ movable: { color: undefined, dests: new Map() }, drawable: { autoShapes: [] } });
     const total = session.correct + session.wrong;
     const pct = total ? Math.round((session.correct / total) * 100) : 0;
@@ -609,6 +702,17 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       skipLine();
     } else if (e.key === '?') {
       showShortcuts();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      step(e.key === 'ArrowLeft' ? -1 : 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      view(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      view(null);
+    } else if (key === 'f') {
+      board.toggleOrientation();
     }
   }
   document.addEventListener('keydown', onKey);

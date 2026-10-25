@@ -1741,3 +1741,25 @@ kbd {
   color: var(--ok);
   font-weight: 600;
 }
+
+/* ---------- Navegación por la línea al entrenar ---------- */
+.board-controls .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.board.viewing {
+  outline: 3px solid var(--info);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.nav-note {
+  margin: 0;
+  text-align: center;
+}
+
+.line-text .mv {
+  margin: 2px 4px 2px 0;
+  cursor: pointer;
+}
