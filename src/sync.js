@@ -5,7 +5,7 @@
 //  - borrados: un repertorio borrado no reaparece (salvo que se edite después en otro dispositivo),
 //  - historial: cada dispositivo aporta el suyo y las estadísticas los suman.
 import { getData, getSettings, updateSettings, save, onSave } from './store.js';
-import { trainableKeys } from './repertoire.js';
+import { trainableKeys, wasReset } from './repertoire.js';
 
 const trainableKeysOf = (rep) => trainableKeys(rep);
 
@@ -31,6 +31,13 @@ function mergeRep(local, remote) {
   for (const [key, card] of Object.entries(base.cards ?? {})) {
     if (!cards[key] || (card.last ?? 0) >= (cards[key].last ?? 0)) cards[key] = card;
   }
+  // Los reinicios de progreso ("volver a aprender") de cualquiera de los dos dispositivos se respetan.
+  const resets = { ...other.resets };
+  for (const [key, time] of Object.entries(base.resets ?? {})) resets[key] = Math.max(resets[key] ?? 0, time);
+  const reset = {
+    progressResetAt: Math.max(local.progressResetAt ?? 0, remote.progressResetAt ?? 0),
+    resets,
+  };
   const keep = new Set(trainableKeysOf(base));
   // Se modifica el objeto local (no se sustituye) para no romper una pantalla que lo esté usando.
   Object.assign(local, {
@@ -39,9 +46,15 @@ function mergeRep(local, remote) {
     positions: base.positions,
     source: base.source,
     updatedAt: base.updatedAt,
-    cards: Object.fromEntries(Object.entries(cards).filter(([key]) => keep.has(key))),
+    ...reset,
+    cards: Object.fromEntries(
+      Object.entries(cards).filter(([key, card]) => keep.has(key) && !wasReset(reset, key, card)),
+    ),
   });
   if (!base.source) delete local.source;
+  // Sin reinicios no se añaden campos vacíos (si no, cada sincronización parecería un cambio).
+  if (!local.progressResetAt) delete local.progressResetAt;
+  if (!Object.keys(local.resets).length) delete local.resets;
   return local;
 }
 

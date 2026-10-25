@@ -627,6 +627,153 @@ export const COURSES = [
       ),
     ],
   },
+
+  // ───────────────────────────── AÚN MÁS CURSOS ─────────────────────────────
+  {
+    id: 'vienesa',
+    name: 'Gambito Vienés',
+    color: 'white',
+    against: '1...e5',
+    tagline: 'Agresivo y directo: f4 pronto y ataque por la columna f.',
+    intro:
+      'Tras 1.e4 e5 juegas 2.Cc3 y, contra 2...Cf6, el Gambito Vienés 3.f4: abres la columna f y buscas la iniciativa desde el principio. Contra 2...Cc6 y 2...Ac5 tienes planes concretos para conservar la ventaja de desarrollo. Ideal si te gustan las posiciones de ataque.',
+    covers: ['2...Cf6 3.f4 d5: la línea principal', '3...exf4 y 3...d6', '2...Cc6: Ac4, d3 y f4', '2...Ac5: Ca4 contra el alfil'],
+    levels: [
+      lines(
+        `1. e4 e5 2. Nc3 {Partida Vienesa: desarrolla y prepara f4.} Nf6 3. f4 {Gambito Vienés: ataca e5 para abrir la columna f.} d5 {La respuesta más fuerte: golpe en el centro.} 4. fxe5 Nxe4 5. Nf3 {Desarrolla y defiende e5.} Be7 6. d4 O-O 7. Bd3 f5 8. exf6 Bxf6 9. O-O {Desarrollo completo y presión en la columna f.}`,
+        `1. e4 e5 2. Nc3 Nf6 3. f4 d5 4. fxe5 Nxe4 5. Nf3 Bg4 {Clava el caballo.} 6. Qe2 {Ataca el caballo de e4 y desclava.} Nxc3 7. dxc3 c6 8. Bf4`,
+        `1. e4 e5 2. Nc3 Nf6 3. f4 d5 4. fxe5 Nxe4 5. Nf3 Nc6 6. Bb5 {Presiona el caballo que defiende e5.}`,
+        `1. e4 e5 2. Nc3 Nf6 3. f4 exf4 {Acepta el gambito.} 4. e5 {Echa al caballo con tempo.} Ng8 5. Nf3 d6 6. d4 dxe5 7. Qe2 {Recupera el peón con ventaja de desarrollo.}`,
+        `1. e4 e5 2. Nc3 Nf6 3. f4 d6 {Defensa pasiva.} 4. Nf3 Nc6 5. d4 {Ocupa el centro: las negras quedan apretadas.}`,
+        `1. e4 e5 2. Nc3 Nc6 3. Bc4 {Desarrolla apuntando a f7.} Nf6 4. d3 Bc5 5. f4 {La idea vienesa: abrir la columna f.} d6 6. Nf3`,
+        `1. e4 e5 2. Nc3 Bc5 3. Nf3 d6 4. Na4 {Va a por el alfil de c5.} Bb6 5. Nxb6 axb6 6. d4 {Pareja de alfiles y centro fuerte.}`,
+      ),
+      lines(
+        `1. e4 e5 2. Nc3 Nf6 3. f4 d5 4. fxe5 Nxe4 5. Nf3 Bc5 6. d4 Bb4 7. Bd2`,
+        `1. e4 e5 2. Nc3 Nf6 3. f4 Nc6 {Imprecisión: tras 4.fxe5 el caballo de f6 tendrá que retroceder.} 4. fxe5 Nxe5 5. d4 Ng6 6. e5 Ng8 7. Nf3 {Gran ventaja de espacio.}`,
+        `1. e4 e5 2. Nc3 Nc6 3. Bc4 Nf6 4. d3 Bb4 5. Nge2 {Evita la clavada molesta y prepara el enroque.}`,
+        `1. e4 e5 2. Nc3 Nc6 3. Bc4 Nf6 4. d3 Na5 {Va a por el alfil.} 5. Nge2 Nxc4 6. dxc4 Bc5 7. O-O d6 8. Qd3 {Desarrolla y prepara Ae3 y Tad1.}`,
+        `1. e4 e5 2. Nc3 d6 3. d4 {Contra la pasiva 2...d6, ocupa el centro de inmediato.}`,
+      ),
+    ],
+  },
+
+  {
+    id: 'escocesa',
+    name: 'Partida Escocesa',
+    color: 'white',
+    against: '1...e5',
+    tagline: 'Abre el centro con 3.d4: juego directo y menos teoría que la Española.',
+    intro:
+      'Con 1.e4 e5 2.Cf3 Cc6 3.d4 abres el centro de inmediato y eliminas el peón de e5. Las posiciones son abiertas, con juego de piezas, y hay bastante menos teoría que en la Española. Contra 4...Ac5 y 4...Cf6, las dos defensas principales, tienes planes claros; contra 4...Dh4 sabrás qué hacer sin sustos. Incluye también la Philidor y la Petrov.',
+    covers: ['4...Ac5: 5.Cxc6 Df6 6.Dd2', '4...Cf6: Variante Mieses (5.Cxc6 bxc6 6.e5)', '4...Dh4 y 4...Cxd4', '3...d6 y 3...Cxd4', 'Philidor y Petrov'],
+    levels: [
+      lines(
+        `1. e4 e5 2. Nf3 Nc6 3. d4 {Partida Escocesa: abre el centro de inmediato.} exd4 4. Nxd4 {El caballo ocupa el centro.} Bc5 {Ataca el caballo de d4.} 5. Nxc6 {Cambia antes de que las negras ganen tiempo.} Qf6 {Amenaza mate en f2.} 6. Qd2 {Defiende f2 y prepara Cc3.} dxc6 7. Nc3 {Desarrollo; luego Dg2 o Ad3 y enroque.}`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 {Ataca e4.} 5. Nxc6 {Variante Mieses.} bxc6 6. e5 {Echa al caballo.} Qe7 {Clava el peón de e5.} 7. Qe2 Nd5 8. c4 {Gana espacio y echa al caballo otra vez.}`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Qh4 {Ataca e4 y f2: parece peligroso pero no lo es.} 5. Nb5 {Contraataque sobre c7.} Bb4+ 6. Bd2 Qxe4+ 7. Be2 {Desarrollo con tempo: tienes mucha compensación por el peón.}`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nxd4 5. Qxd4 {Tu dama queda muy activa en el centro.}`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 d6 {Mantiene e5.} 4. Bb5 {Presiona el caballo de c6.} Bd7 5. Nc3`,
+        `1. e4 e5 2. Nf3 d6 {Defensa Philidor.} 3. d4 Nf6 4. Nc3 Nbd7 5. Bc4 Be7 6. O-O O-O 7. Re1 c6 8. a4`,
+        `1. e4 e5 2. Nf3 Nf6 {Defensa Petrov.} 3. Nxe5 d6 {Si 3...Cxe4?, 4.De2 gana material.} 4. Nf3 Nxe4 5. d4 d5 6. Bd3 Nc6 7. O-O Be7 8. c4`,
+      ),
+      lines(
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bc5 5. Nxc6 Qf6 6. Qd2 bxc6 7. Bd3 {Desarrollo y enroque.}`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 5. Nxc6 bxc6 6. e5 Qe7 7. Qe2 Nd5 8. c4 Ba6 9. b3 {Defiende c4.}`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 5. Nxc6 bxc6 6. e5 Qe7 7. Qe2 Nd5 8. c4 Nb6 9. Nd2`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 Nxd4 4. Nxd4 exd4 5. Qxd4`,
+        `1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Bb4+ 5. c3 Bc5 6. Be3`,
+        `1. e4 e5 2. Nf3 Nf6 3. Nxe5 Nxe4 4. Qe2 Qe7 5. Qxe4 d6 6. d4 dxe5 7. dxe5 {Has ganado un peón.}`,
+      ),
+    ],
+  },
+
+  {
+    id: 'francesa',
+    name: 'Defensa Francesa',
+    color: 'black',
+    against: '1.e4',
+    tagline: 'Sólida y con contragolpe: la Rubinstein evita la teoría más afilada.',
+    intro:
+      'Contra 1.e4 juegas 1...e6 y 2...d5. Contra 3.Cc3 y 3.Cd2 eliges la Variante Rubinstein (3...dxe4): cambias en el centro, desarrollas con ...Cd7 y ...Cgf6 y obtienes una posición muy sólida con poca teoría. Contra el Avance golpeas la cadena con ...c5, ...Cc6 y ...Db6, y contra el Cambio juegas con piezas activas.',
+    covers: ['3.Cc3 o 3.Cd2: Rubinstein (3...dxe4)', '3.e5: Avance con ...c5, ...Cc6 y ...Db6', '3.exd5: Cambio', '2.d3 (Ataque Indio de Rey) y 2.Cf3'],
+    levels: [
+      lines(
+        `1. e4 e6 {Defensa Francesa: prepara ...d5 con el centro bien apoyado.} 2. d4 d5 3. Nc3 dxe4 {Variante Rubinstein: cambia en el centro y evita la teoría más afilada.} 4. Nxe4 Nd7 {Prepara ...Cgf6 sin permitir que te doblen los peones.} 5. Nf3 Ngf6 6. Nxf6+ Nxf6 7. Bd3 c5 {Golpea el centro: tus piezas salen con facilidad.} 8. dxc5 Bxc5`,
+        `1. e4 e6 2. d4 d5 3. Nd2 dxe4 {El mismo plan contra 3.Cd2.} 4. Nxe4 Nd7`,
+        `1. e4 e6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nd7 5. Nf3 Ngf6 6. Bd3 Nxe4 7. Bxe4 Nf6 8. Bd3 c5`,
+        `1. e4 e6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nd7 5. Nf3 Ngf6 6. Bg5 Be7 7. Nxf6+ Bxf6 8. Bxf6 Nxf6`,
+        `1. e4 e6 2. d4 d5 3. e5 {Variante del Avance.} c5 {Ataca la base de la cadena de peones.} 4. c3 Nc6 5. Nf3 Qb6 {Máxima presión sobre d4.} 6. a3 c4 {Cierra el flanco de dama y gana espacio.} 7. Nbd2 Na5`,
+        `1. e4 e6 2. d4 d5 3. exd5 {Variante del Cambio.} exd5 4. Nf3 Nf6 5. Bd3 Bd6 6. O-O O-O 7. Bg5 Bg4`,
+        `1. e4 e6 2. d3 {Ataque Indio de Rey.} d5 3. Nd2 Nf6 4. Ngf3 c5 5. g3 Nc6 6. Bg2 Be7 7. O-O O-O`,
+      ),
+      lines(
+        `1. e4 e6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Nd7 5. Nf3 Ngf6 6. Nxf6+ Nxf6 7. c3 c5 8. Be3 cxd4 9. Nxd4 Bd7 {Desarrollo tranquilo; luego ...Ac5 o ...Ae7 y enroque.}`,
+        `1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Qb6 6. Bd3 cxd4 7. cxd4 Bd7 {No caigas en 7...Cxd4? 8.Cxd4 Dxd4?? 9.Ab5+.}`,
+        `1. e4 e6 2. d4 d5 3. e5 c5 4. c3 Nc6 5. Nf3 Qb6 6. Be2 cxd4 7. cxd4 Nh6 {El caballo va a f5 a presionar d4.}`,
+        `1. e4 e6 2. d4 d5 3. exd5 exd5 4. Bd3 Nc6 5. c3 Bd6 6. Nf3 Nge7`,
+        `1. e4 e6 2. d4 d5 3. exd5 exd5 4. c4 Nf6 5. Nc3 Bb4`,
+        `1. e4 e6 2. Nf3 d5 3. Nc3 Nf6 4. e5 Nfd7 5. d4 c5`,
+      ),
+    ],
+  },
+
+  {
+    id: 'gdr',
+    name: 'Gambito de Dama Rehusado',
+    color: 'black',
+    against: '1.d4',
+    tagline: 'La defensa clásica de los campeones: sólida y con planes claros.',
+    intro:
+      'Contra 1.d4 d5 2.c4 juegas 2...e6, defendiendo d5 con el peón. Es la defensa más clásica: tu alfil de c8 sale más tarde, pero tu posición es muy firme. Contra la línea principal con 4.Ag5 juegas la Variante Tartakower (...h6 y ...b6), contra el Cambio sabes cómo responder al ataque de minorías, y también tienes respuestas contra la Catalana y el Londres.',
+    covers: ['4.Ag5: Tartakower (...h6 y ...b6)', '4.cxd5: Variante del Cambio', '5.Af4', 'Catalana (g3)', 'Contra el Londres y 2.Cf3'],
+    levels: [
+      lines(
+        `1. d4 d5 2. c4 e6 {Gambito de Dama Rehusado: defiende d5 con el peón.} 3. Nc3 Nf6 4. Bg5 Be7 {Deshace la clavada.} 5. e3 O-O 6. Nf3 h6 {Pregunta al alfil.} 7. Bh4 b6 {Variante Tartakower: el alfil de c8 sale a b7.} 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 {Posición sólida: el alfil de b7 apoyará ...c5.}`,
+        `1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 {Variante del Cambio.} exd5 5. Bg5 c6 {Apoya d5 y deja c7 libre para la dama.} 6. Qc2 Be7 7. e3 Nbd7 8. Bd3 O-O`,
+        `1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Be7 5. Bf4 O-O 6. e3 c5 {Golpea el centro de inmediato.} 7. dxc5 Bxc5`,
+        `1. d4 d5 2. c4 e6 3. Nf3 Nf6 4. g3 {Apertura Catalana.} Be7 5. Bg2 O-O 6. O-O dxc4 {Toma el peón: las blancas tendrán que trabajar para recuperarlo.} 7. Qc2 a6`,
+        `1. d4 d5 2. Bf4 {Sistema Londres.} Nf6 3. e3 c5 {Lo más activo contra el Londres.} 4. c3 Nc6 5. Nd2 Qb6`,
+        `1. d4 d5 2. Nf3 Nf6 3. c4 e6`,
+      ),
+      lines(
+        `1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 h6 7. Bxf6 Bxf6 8. Rc1 c6`,
+        `1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. Nf3 O-O 6. e3 h6 7. Bh4 b6`,
+        `1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 5. Bg5 c6 6. e3 Bf5 7. Qf3 Bg6`,
+        `1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Be7 5. Bg5 O-O 6. e3 h6 7. Bh4 b6`,
+        `1. d4 d5 2. c4 e6 3. Nf3 Nf6 4. g3 Be7 5. Bg2 O-O 6. O-O dxc4 7. Ne5 c5`,
+        `1. d4 d5 2. Nf3 Nf6 3. Bf4 c5 4. e3 Nc6 5. c3 Qb6`,
+        `1. d4 d5 2. Nf3 Nf6 3. e3 e6 4. Bd3 c5 5. b3 Nc6`,
+      ),
+    ],
+  },
+
+  {
+    id: 'kan',
+    name: 'Siciliana: Variante Kan',
+    color: 'black',
+    against: '1.e4',
+    tagline: 'Siciliana flexible y de contraataque, con estructuras fáciles de entender.',
+    intro:
+      'Contra 1.e4 juegas 1...c5, 2...e6 y, tras 3.d4 cxd4 4.Cxd4, la flexible 4...a6. No te comprometes pronto: según lo que hagan las blancas eliges entre ...Dc7, ...Cf6, ...Ab4 o ...Ac5, con estructuras tipo erizo que dan mucho juego. Incluye las anti-sicilianas más frecuentes.',
+    covers: ['5.Ad3: Cf6 y Dc7', '5.c4: Bind de Maroczy', '5.Cc3: Dc7', 'Alapin, 2.Cc3 y Smith-Morra', '3.c3 y 3.Cc3'],
+    levels: [
+      lines(
+        `1. e4 c5 {Defensa Siciliana.} 2. Nf3 e6 {Flexible: prepara ...d5 o ...a6.} 3. d4 cxd4 4. Nxd4 a6 {Variante Kan: controla b5 y espera.} 5. Bd3 {La línea principal.} Nf6 6. O-O Qc7 7. Qe2 d6 8. c4 g6 {Estructura erizo: alfil a g7 y presión en la gran diagonal.} 9. Nc3 Bg7`,
+        `1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 5. c4 {Bind de Maroczy.} Nf6 6. Nc3 Bb4 {Presiona e4.} 7. Bd3 Nc6 8. Nxc6 dxc6`,
+        `1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 5. Nc3 Qc7 {Controla e5 y prepara ...b5.} 6. Bd3 Nc6`,
+        `1. e4 c5 2. c3 {Variante Alapin.} Nf6 3. e5 Nd5 4. d4 cxd4 5. cxd4 d6`,
+        `1. e4 c5 2. Nc3 e6 3. g3 {Siciliana Cerrada.} d5 {Golpe central en el momento justo.}`,
+        `1. e4 c5 2. d4 cxd4 3. c3 Nf6 {Declina el Smith-Morra.} 4. e5 Nd5 5. cxd4 d6`,
+        `1. e4 c5 2. Nf3 e6 3. c3 d5 4. e5 {Estructura de la Francesa del Avance.} Nc6 5. d4 Qb6`,
+      ),
+      lines(
+        `1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 a6 5. Nc3 Qc7 6. g3 Bb4 7. Bd2 Nf6`,
+        `1. e4 c5 2. Nf3 e6 3. Nc3 a6 4. d4 cxd4 5. Nxd4 Qc7`,
+        `1. e4 c5 2. Nf3 e6 3. d3 Nc6 4. g3 d5 5. Nbd2 Nf6 6. Bg2 Be7`,
+      ),
+    ],
+  },
 ];
 
 export function getCourse(id) {

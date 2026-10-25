@@ -4,7 +4,7 @@ import { h, fill, toast, download, safeFilename, openDialog } from '../dom.js';
 import { getRepertoire, getSettings, updateSettings, save } from '../store.js';
 import {
   ROOT_KEY, addMove, deleteMove, importPgn, exportPgn, isUserTurn, gapKeys, pathTo,
-  stepLabel, pathToText, fenAfterPath, allLines, repStats, parentCount, pathFromUcis,
+  stepLabel, pathToText, fenAfterPath, allLines, repStats, parentCount, pathFromUcis, resetProgress,
 } from '../repertoire.js';
 import { createBoard, arrow } from '../board.js';
 import { colorToMove, destsFor, squaresOf, tryMove, moveFromUci, sanOf } from '../chess-utils.js';
@@ -248,6 +248,11 @@ export function renderEditor(root, { id, ruta = '' }) {
           class: 'btn primary',
           href: `#/entrenar/${rep.id}?modo=libre${cursor ? '&desde=' + path.map((s) => s.move.uci).join(',') : ''}`,
         }, cursor ? 'Practicar desde aquí' : 'Practicar todo'),
+        h('button', {
+          class: 'btn',
+          title: 'Las jugadas tuyas que cuelgan de esta posición vuelven a ser nuevas y las aprendes otra vez',
+          onClick: relearn,
+        }, cursor ? 'Volver a aprender desde aquí' : 'Volver a aprender todo'),
         gaps.length ? h('button', { class: 'btn', onClick: () => jumpToGap(gaps) }, 'Ir a una posición sin respuesta') : null,
         h('button', {
           class: 'btn',
@@ -417,15 +422,22 @@ export function renderEditor(root, { id, ruta = '' }) {
   // Copia del repertorio y de la línea actual para poder deshacer borrados e importaciones.
   function snapshot() {
     return {
-      data: JSON.stringify({ positions: rep.positions, cards: rep.cards, source: rep.source }),
+      data: JSON.stringify({
+        positions: rep.positions,
+        cards: rep.cards,
+        source: rep.source,
+        progressResetAt: rep.progressResetAt,
+        resets: rep.resets,
+      }),
       ucis: fullPath.map((s) => s.move.uci),
       cursor,
     };
   }
 
   function undoTo(snap) {
-    Object.assign(rep, JSON.parse(snap.data));
-    if (!rep.source) delete rep.source;
+    const saved = JSON.parse(snap.data);
+    for (const key of ['source', 'progressResetAt', 'resets']) if (saved[key] === undefined) delete rep[key];
+    Object.assign(rep, saved);
     save(rep);
     fullPath = pathFromUcis(rep, snap.ucis) ?? [];
     cursor = Math.min(snap.cursor, fullPath.length);
@@ -448,6 +460,19 @@ export function renderEditor(root, { id, ruta = '' }) {
     sync();
     const removed = before - Object.keys(rep.positions).length;
     toast(`${san(move.san)} borrada${removed > 1 ? ` (${removed} posiciones)` : ''}`, 'info', { label: 'Deshacer', onClick: () => undoTo(snap) });
+  }
+
+  // Olvida el progreso de lo que cuelga de la posición actual para volver a aprenderlo.
+  function relearn() {
+    const snap = snapshot();
+    const count = resetProgress(rep, { from: currentKey() });
+    save(rep);
+    renderPanel();
+    toast(
+      count ? `${count} jugadas vuelven a ser nuevas: las repasarás con pistas` : 'No había progreso que reiniciar aquí',
+      'ok',
+      count ? { label: 'Deshacer', onClick: () => undoTo(snap) } : null,
+    );
   }
 
   function makeMain(fromKey, move) {

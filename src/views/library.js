@@ -10,6 +10,16 @@ const FILTERS = [
 ];
 
 let filter = 'all';
+let query = '';
+
+// Para buscar sin importar tildes ni mayúsculas.
+const normalize = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+export function matches(course, q) {
+  if (!q.trim()) return true;
+  const haystack = normalize([course.name, course.against, course.tagline, course.intro, ...course.covers].join(' '));
+  return normalize(q).trim().split(/\s+/).every((word) => haystack.includes(word));
+}
 
 export function renderLibrary(root) {
   const grid = h('div', { class: 'course-grid' });
@@ -33,13 +43,27 @@ export function renderLibrary(root) {
           'Cursos listos para entrenar, con la idea de cada jugada explicada y las respuestas más habituales del rival. ',
           'Elige hasta dónde quieres llegar: puedes empezar por lo esencial y ampliar el curso cuando quieras.'),
       ),
-      h('div', { class: 'segmented filter' }, filterBtns),
+      h('div', { class: 'library-tools' },
+        h('div', { class: 'segmented filter' }, filterBtns),
+        h('input', {
+          type: 'search',
+          class: 'library-search',
+          placeholder: 'Buscar: siciliana, 1.d4, gambito…',
+          value: query,
+          'aria-label': 'Buscar cursos',
+          onInput: (e) => {
+            query = e.target.value;
+            renderGrid();
+          },
+        }),
+      ),
       grid,
     ),
   );
 
   function renderGrid() {
-    fill(grid, COURSES.filter((c) => filter === 'all' || c.color === filter).map(courseCard));
+    const list = COURSES.filter((c) => (filter === 'all' || c.color === filter) && matches(c, query));
+    fill(grid, list.length ? list.map(courseCard) : h('p', { class: 'muted' }, 'No hay cursos que coincidan con la búsqueda.'));
   }
 
   function courseCard(course) {

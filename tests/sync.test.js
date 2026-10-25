@@ -164,3 +164,23 @@ describe('sincronizar con GitHub', () => {
     expect(backup.settings.syncGistId).toBe('');
   });
 });
+
+describe('reinicios de progreso al sincronizar', () => {
+  it('un reinicio en otro dispositivo borra el progreso antiguo, no el nuevo', () => {
+    const local = rep('r1', 100, { cards: { [A]: card(50, 5) } });
+    const remote = rep('r1', 100, { cards: {}, progressResetAt: 80 });
+    const [merged] = sync.mergeRepertoires([local], [remote], {});
+    expect(merged.cards).toEqual({}); // el repaso local (50) es anterior al reinicio (80)
+    expect(merged.progressResetAt).toBe(80);
+
+    const local2 = rep('r1', 100, { cards: { [A]: card(90, 1) } });
+    const [merged2] = sync.mergeRepertoires([local2], [rep('r1', 100, { progressResetAt: 80 })], {});
+    expect(merged2.cards[A].reps).toBe(1); // aprendido después del reinicio: se queda
+  });
+
+  it('respeta los reinicios de una sola posición', () => {
+    const local = rep('r1', 100, { cards: { [A]: card(50, 5) }, resets: {} });
+    const remote = rep('r1', 100, { cards: { [A]: card(40, 3) }, resets: { [A]: 70 } });
+    expect(sync.mergeRepertoires([local], [remote], {})[0].cards).toEqual({});
+  });
+});

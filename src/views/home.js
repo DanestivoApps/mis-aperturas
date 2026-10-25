@@ -1,10 +1,10 @@
 // Inicio: lista de repertorios, crear nuevos, copias de seguridad y acceso a la biblioteca.
 import { h, toast, download, safeFilename, openDialog } from '../dom.js';
 import { getData, addRepertoire, removeRepertoire, save, exportBackup, importBackup, streak } from '../store.js';
-import { newRepertoire, importPgn, exportPgn, repStats, weakKeys } from '../repertoire.js';
+import { newRepertoire, importPgn, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
 import { describeDue } from '../srs.js';
 import { LEVELS } from '../library.js';
-import { outdatedReps, updateCourse, updateMessage } from '../courses.js';
+import { outdatedReps, updateCourse, updateMessage, restoreCourse, repSnapshot, restoreSnapshot } from '../courses.js';
 
 export function renderHome(root) {
   const data = getData();
@@ -73,7 +73,7 @@ export function renderHome(root) {
             h('span', { class: 'library-cta-icon' }, '📚'),
             h('span', null,
               h('strong', null, 'Empieza con la biblioteca de aperturas'),
-              h('span', { class: 'muted' }, '17 cursos con explicaciones y variantes del rival: Italiana, Española, Londres, Gambito de Dama, Caro-Kann, Siciliana, Eslava, India de Rey, Petrov…'),
+              h('span', { class: 'muted' }, '22 cursos con explicaciones y variantes del rival: Italiana, Española, Escocesa, Londres, Gambito de Dama, Caro-Kann, Francesa, Siciliana, Eslava, India de Rey…'),
             ),
             h('span', { class: 'btn primary' }, 'Ver cursos →'),
           ),
@@ -145,6 +145,41 @@ function menu(rep) {
   const details = h('details', { class: 'menu' },
     h('summary', { class: 'icon-btn', 'aria-label': 'Más opciones' }, '⋯'),
     h('div', { class: 'menu-list' },
+      h('button', {
+        title: 'Todas las jugadas vuelven a ser nuevas y las aprendes otra vez con pistas',
+        onClick: () => {
+          if (!confirm(`¿Volver a aprender "${rep.name}" desde cero? Todas sus jugadas volverán a ser nuevas.`)) return;
+          const snap = repSnapshot(rep);
+          const count = resetProgress(rep);
+          save(rep);
+          toast(`Progreso reiniciado: ${count} jugadas vuelven a ser nuevas`, 'ok', {
+            label: 'Deshacer',
+            onClick: () => {
+              restoreSnapshot(rep, snap);
+              rerender();
+            },
+          });
+          rerender();
+        },
+      }, 'Volver a aprender desde cero'),
+      rep.source
+        ? h('button', {
+            title: 'Quita tus cambios y recupera el curso tal cual está en la biblioteca (tu progreso se conserva)',
+            onClick: () => {
+              if (!confirm(`¿Restaurar "${rep.name}" como en la biblioteca? Se quitan las jugadas que añadiste tú y vuelven las que borraste.`)) return;
+              const snap = repSnapshot(rep);
+              restoreCourse(rep);
+              toast('Curso restaurado como en la biblioteca', 'ok', {
+                label: 'Deshacer',
+                onClick: () => {
+                  restoreSnapshot(rep, snap);
+                  rerender();
+                },
+              });
+              rerender();
+            },
+          }, 'Restaurar curso original')
+        : null,
       h('button', {
         onClick: () => {
           const name = prompt('Nuevo nombre del repertorio:', rep.name);

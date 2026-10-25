@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   newRepertoire, deleteMove, posKey, ROOT_KEY, START_FEN, allLines, gapKeys, pathTo, pathFromUcis,
   repStats, trainableKeys, parentCount, weakKeys, pathToText, stepLabel, fenAfterPath,
+  resetProgress, subtreeKeys, wasReset,
 } from '../src/repertoire.js';
 import { play, keyAfter, movesAfter } from './helpers.js';
 
@@ -136,5 +137,39 @@ describe('estadísticas y posiciones débiles', () => {
     rep.cards[b] = { reps: 0, interval: 0, ease: 2, due: 0, lapses: 3, last: 1 };
     rep.cards[c] = { reps: 5, interval: 30, ease: 2, due: 0, lapses: 4, last: 1 }; // ya consolidada
     expect(weakKeys(rep)).toEqual([b, a]);
+  });
+});
+
+describe('volver a aprender', () => {
+  const setup = () => {
+    const rep = newRepertoire('r', 'white');
+    play(rep, ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4']);
+    play(rep, ['e4', 'c5', 'Nf3']);
+    for (const key of trainableKeys(rep)) rep.cards[key] = { reps: 2, interval: 3, ease: 2.5, due: 0, lapses: 0, last: 100 };
+    return rep;
+  };
+
+  it('reinicia todo el progreso y deja marca de fecha', () => {
+    const rep = setup();
+    expect(resetProgress(rep, { now: 500 })).toBe(4);
+    expect(rep.cards).toEqual({});
+    expect(rep.progressResetAt).toBe(500);
+    expect(repStats(rep).fresh).toBe(4);
+  });
+
+  it('desde una posición solo reinicia lo que cuelga de ella', () => {
+    const rep = setup();
+    const afterE5 = keyAfter(['e4', 'e5']);
+    expect(resetProgress(rep, { from: afterE5, now: 500 })).toBe(2); // 2.Cf3 y 3.Ac4
+    expect(Object.keys(rep.cards).sort()).toEqual([ROOT_KEY, keyAfter(['e4', 'c5'])].sort());
+    expect(rep.resets[afterE5]).toBe(500);
+    expect(subtreeKeys(rep, afterE5)).toContain(keyAfter(['e4', 'e5', 'Nf3', 'Nc6']));
+  });
+
+  it('wasReset distingue el progreso anterior del nuevo', () => {
+    const rep = setup();
+    resetProgress(rep, { now: 500 });
+    expect(wasReset(rep, ROOT_KEY, { last: 100 })).toBe(true);
+    expect(wasReset(rep, ROOT_KEY, { last: 600 })).toBe(false);
   });
 });

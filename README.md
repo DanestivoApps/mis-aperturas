@@ -53,20 +53,33 @@ las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **A
 | Con blancas | Con negras |
 | --- | --- |
 | Partida Italiana (contra 1...e5) | Defensa Caro-Kann (contra 1.e4) |
-| Apertura Española (contra 1...e5) | Siciliana: Dragón Acelerado (contra 1.e4) |
+| Apertura Española (contra 1...e5) | Defensa Francesa: Rubinstein (contra 1.e4) |
+| Partida Escocesa (contra 1...e5) | Siciliana: Dragón Acelerado (contra 1.e4) |
+| Gambito Vienés (contra 1...e5) | Siciliana: Variante Kan (contra 1.e4) |
 | Sistema Londres (1.d4) | Defensa Petrov (contra 1.e4 e5, y todo lo demás tras 1...e5) |
 | Gambito de Dama (contra 1...d5) | Defensa Escandinava (contra 1.e4) |
 | Contra la Siciliana: Alapin | Defensa Eslava (contra 1.d4) |
-| Contra la Francesa: Avance | Gambito de Dama Aceptado (contra 1.d4) |
-| Contra la Caro-Kann: Avance | India de Rey (contra 1.d4) |
-| Contra la Escandinava | Contra la Inglesa y la Réti (encaja con Caro-Kann y Eslava) |
-| Contra Pirc, Moderna y Alekhine | |
+| Contra la Francesa: Avance | Gambito de Dama Rehusado (contra 1.d4) |
+| Contra la Caro-Kann: Avance | Gambito de Dama Aceptado (contra 1.d4) |
+| Contra la Escandinava | India de Rey (contra 1.d4) |
+| Contra Pirc, Moderna y Alekhine | Contra la Inglesa y la Réti (encaja con Caro-Kann y Eslava) |
 
 Si se mejora un curso que ya tienes, la app avisa y lo actualiza conservando tu progreso, las
-jugadas que añadiste tú y las que borraste a propósito.
+jugadas que añadiste tú y las que borraste a propósito. La biblioteca tiene buscador (sin
+importar tildes ni mayúsculas).
+
+### Volver a aprender
+- **Volver a aprender desde cero** (menú ⋯ de cada repertorio): todas las jugadas vuelven a ser
+  nuevas y las aprendes otra vez con pistas. Se puede deshacer.
+- **Volver a aprender desde aquí** (editor): solo las jugadas que cuelgan de esa posición.
+- **Restaurar curso original** (menú ⋯ de los cursos): quita tus cambios y recupera el curso tal
+  cual, conservando tu progreso.
+- **↺ Repetir línea** al entrenar (atajo `R`) y «Repasar todas las líneas otra vez» al terminar.
+
+Los reinicios también se respetan al sincronizar con tus otros dispositivos.
 
 Calidad: los tests comprueban que todas las jugadas son legales, que no hay posiciones sin
-respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 17 cursos
+respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 22 cursos
 (las tuyas y las del rival) se revisaron con Stockfish 19 a profundidad 18, y 20–22 en los casos
 dudosos, y se corrigieron las que perdían ventaja. Las jugadas del rival que son errores graves
 son trampas a propósito y están explicadas. Las afirmaciones concretas de los comentarios

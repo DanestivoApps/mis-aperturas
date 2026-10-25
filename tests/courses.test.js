@@ -101,3 +101,30 @@ describe('cursos de la biblioteca', () => {
     }
   });
 });
+
+describe('restaurar el curso original', () => {
+  it('quita tus jugadas, recupera las borradas y conserva el progreso', async () => {
+    localStorage.clear();
+    vi.resetModules();
+    const courses = await import('../src/courses.js');
+    const library = await import('../src/library.js');
+    const { Chess } = await import('chess.js');
+    const { addMove, deleteMove, ROOT_KEY } = await import('../src/repertoire.js');
+    const rep = courses.addCourse(library.getCourse('londres'), 0);
+    rep.cards[ROOT_KEY] = { reps: 4, interval: 20, ease: 2.5, due: 1, lapses: 0, last: 1 };
+    addMove(rep, new Chess().move('c4'), { own: true });
+    const afterD4 = rep.positions[ROOT_KEY].moves[0].to;
+    const d5 = rep.positions[afterD4].moves.find((m) => m.san === 'd5');
+    deleteMove(rep, afterD4, d5.uci);
+    rep.source.removed = [`${afterD4}|${d5.uci}`];
+
+    const snap = courses.repSnapshot(rep);
+    courses.restoreCourse(rep);
+    expect(rep.positions[ROOT_KEY].moves.map((m) => m.san)).toEqual(['d4']);
+    expect(rep.positions[afterD4].moves.some((m) => m.san === 'd5')).toBe(true);
+    expect(rep.cards[ROOT_KEY].reps).toBe(4);
+
+    courses.restoreSnapshot(rep, snap); // deshacer
+    expect(rep.positions[ROOT_KEY].moves.map((m) => m.san)).toEqual(['d4', 'c4']);
+  });
+});

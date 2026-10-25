@@ -81,6 +81,30 @@ export function expandCourse(rep, level) {
   return rebuildCourse(rep, level).added;
 }
 
+// Vuelve al curso tal cual es en la biblioteca: quita las jugadas y comentarios que añadiste
+// y recupera las jugadas del curso que borraste. Tu progreso de repaso se conserva.
+export function restoreCourse(rep) {
+  for (const pos of Object.values(rep.positions)) {
+    pos.moves = pos.moves.filter((m) => !m.own);
+    for (const m of pos.moves) delete m.commentEdited;
+  }
+  rep.source.removed = [];
+  return rebuildCourse(rep);
+}
+
+// Copia de lo que cambia al rehacer o reiniciar, para poder deshacerlo.
+export function repSnapshot(rep) {
+  const { positions, cards, source, progressResetAt, resets } = rep;
+  return JSON.stringify({ positions, cards, source, progressResetAt, resets });
+}
+
+export function restoreSnapshot(rep, snap) {
+  const data = JSON.parse(snap);
+  for (const key of ['source', 'progressResetAt', 'resets']) if (data[key] === undefined) delete rep[key];
+  Object.assign(rep, data);
+  save(rep);
+}
+
 // Texto para avisar de lo que ha cambiado al actualizar.
 export function updateMessage({ added, removed }) {
   if (!added && !removed) return 'Curso actualizado: explicaciones mejoradas';

@@ -384,3 +384,50 @@ export function fenAfterPath(rep, path) {
   if (!path.length) return START_FEN;
   return rep.positions[path[path.length - 1].move.to].fen;
 }
+
+// Todas las posiciones que cuelgan de `from` (incluida).
+export function subtreeKeys(rep, from) {
+  const seen = new Set([from]);
+  const stack = [from];
+  while (stack.length) {
+    const key = stack.pop();
+    for (const m of rep.positions[key]?.moves ?? []) {
+      if (!seen.has(m.to)) {
+        seen.add(m.to);
+        stack.push(m.to);
+      }
+    }
+  }
+  return [...seen];
+}
+
+// Olvida el progreso para volver a aprender: las jugadas vuelven a ser "nuevas".
+// Con `from`, solo lo que cuelga de esa posición. Deja una marca de fecha para que la
+// sincronización no recupere el progreso antiguo desde otro dispositivo.
+// Devuelve cuántas jugadas se han reiniciado.
+export function resetProgress(rep, { from = null, now = Date.now() } = {}) {
+  let count = 0;
+  if (!from || from === ROOT_KEY) {
+    count = Object.keys(rep.cards).length;
+    rep.cards = {};
+    rep.progressResetAt = now;
+    rep.resets = {};
+    return count;
+  }
+  rep.resets ??= {};
+  for (const key of subtreeKeys(rep, from)) {
+    if (!isUserTurn(rep, key) || !rep.positions[key]?.moves.length) continue;
+    if (rep.cards[key]) {
+      delete rep.cards[key];
+      count++;
+    }
+    rep.resets[key] = now;
+  }
+  return count;
+}
+
+// ¿Se reinició esta posición después de este repaso?
+export function wasReset(rep, key, card) {
+  const since = Math.max(rep.progressResetAt ?? 0, rep.resets?.[key] ?? 0);
+  return (card.last ?? 0) <= since;
+}

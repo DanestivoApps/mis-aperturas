@@ -73,8 +73,9 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const hintBtn = h('button', { class: 'btn', onClick: showHint, title: 'Atajo: H' }, 'Pista');
   const nextBtn = h('button', { class: 'btn primary', hidden: true, onClick: nextLine, title: 'Atajo: Enter' }, 'Siguiente línea →');
   const skipBtn = h('button', { class: 'btn', onClick: skipLine }, 'Saltar línea');
+  const repeatBtn = h('button', { class: 'btn', onClick: repeatLine, title: 'Vuelve a jugar esta línea desde el principio (atajo: R)' }, '↺ Repetir línea');
   const actions = h('div', { class: 'actions' },
-    nextBtn, hintBtn, skipBtn, h('a', { class: 'btn ghost', href: `#/editar/${rep.id}` }, 'Editar repertorio'));
+    nextBtn, repeatBtn, hintBtn, skipBtn, h('a', { class: 'btn ghost', href: `#/editar/${rep.id}` }, 'Editar repertorio'));
   const panel = h('div', { class: 'panel' },
     h('div', { class: 'panel-head' },
       h('a', { href: '#/', class: 'back' }, '← Repertorios'),
@@ -140,9 +141,20 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   }
 
   function nextLine() {
-    nextBtn.hidden = true;
     const line = pickLine();
     if (!line) return finish();
+    startLine(line);
+  }
+
+  // Vuelve a jugar la línea actual (o la que acabas de terminar) desde el principio.
+  function repeatLine() {
+    if (!cur) return;
+    startLine(cur.line);
+    say('Otra vez desde el principio.', 'info');
+  }
+
+  function startLine(line) {
+    nextBtn.hidden = true;
     cur = { line, idx: 0, chess: new Chess(), awaiting: false, hinted: false, failed: false, lineFailed: false };
     fill(comment);
     board.set({
@@ -157,7 +169,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     skipBtn.disabled = false;
     updateCounters();
     updateLineText();
-    say(rep.color === 'white' ? 'Empiezas tú.' : 'El rival empieza…');
+    if (!feedback.textContent.startsWith('Otra vez')) say(rep.color === 'white' ? 'Empiezas tú.' : 'El rival empieza…');
     laterInLine(advance, 350);
   }
 
@@ -390,9 +402,9 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       srs && s.fresh && session.newBudget <= 0
         ? h('button', { class: 'btn', onClick: restart }, `Aprender más jugadas nuevas (${s.fresh})`)
         : null,
-      modo === 'libre'
-        ? h('button', { class: 'btn', onClick: restart }, 'Otra vuelta')
-        : h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre` }, 'Práctica libre'),
+      srs
+        ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre` }, '↺ Repasar todas las líneas otra vez')
+        : h('button', { class: 'btn', onClick: restart }, '↺ Otra vuelta'),
       nextRep ? h('a', { class: 'btn ghost', href: '#/' }, 'Terminar') : null,
     );
     if (srs && Number.isFinite(nextDue)) {
@@ -417,6 +429,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       nextLine();
     } else if (e.key.toLowerCase() === 'h') {
       showHint();
+    } else if (e.key.toLowerCase() === 'r') {
+      repeatLine();
     }
   }
   document.addEventListener('keydown', onKey);

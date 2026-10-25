@@ -1538,3 +1538,26 @@ details.card > summary {
 .steps li {
   margin: 4px 0;
 }
+
+.library-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.library-tools .segmented.filter {
+  margin-bottom: 0;
+  flex: 1 1 320px;
+}
+
+.library-search {
+  flex: 1 1 220px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
