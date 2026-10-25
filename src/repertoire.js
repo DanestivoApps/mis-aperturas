@@ -36,8 +36,9 @@ export function isUserTurn(rep, key) {
 }
 
 // Añade una jugada (ya validada por chess.js) desde la posición `fromFen`.
-// Devuelve la arista, nueva o existente.
-export function addMove(rep, move) {
+// Devuelve la arista, nueva o existente. Con `own`, marca las jugadas nuevas como tuyas
+// (en un curso de la biblioteca, así se conservan al actualizarlo).
+export function addMove(rep, move, { own = false } = {}) {
   const fromKey = posKey(move.before);
   const toKey = posKey(move.after);
   if (!rep.positions[fromKey]) rep.positions[fromKey] = { fen: move.before, moves: [] };
@@ -47,6 +48,7 @@ export function addMove(rep, move) {
   let edge = list.find((m) => m.uci === uci);
   if (!edge) {
     edge = { san: move.san, uci, to: toKey };
+    if (own) edge.own = true;
     list.push(edge);
   }
   return edge;
@@ -246,7 +248,7 @@ export function tokenize(text) {
 
 // Importa uno o varios PGN (con variantes y comentarios) al repertorio.
 // Devuelve { added, errors }.
-export function importPgn(rep, text) {
+export function importPgn(rep, text, { own = false } = {}) {
   const chess = new Chess();
   let loaded = chess.fen();
   let added = 0;
@@ -315,7 +317,7 @@ export function importPgn(rep, text) {
       const move = chess.move(word);
       loaded = move.after;
       const before = rep.positions[posKey(move.before)]?.moves.length ?? 0;
-      const edge = addMove(rep, move);
+      const edge = addMove(rep, move, { own });
       if ((rep.positions[posKey(move.before)].moves.length) > before) added++;
       state = { before: move.before, after: move.after, edge };
     } catch {

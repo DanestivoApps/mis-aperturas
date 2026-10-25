@@ -13,7 +13,7 @@ import { cloudEval, formatEval, explorer, parseStudyUrl, fetchStudyPgn, TOKEN_UR
 import { playMove } from '../sound.js';
 import { reviewRepertoire } from '../review.js';
 import { getCourse, LEVELS } from '../library.js';
-import { expandCourse } from '../courses.js';
+import { expandCourse, updateCourse, updateMessage, isOutdated } from '../courses.js';
 import { san } from '../notation.js';
 
 export function renderEditor(root, { id, ruta = '' }) {
@@ -76,8 +76,9 @@ export function renderEditor(root, { id, ruta = '' }) {
 
   function addAndEnter(move) {
     playMove(move);
-    const edge = addMove(rep, move);
-    save();
+    // En un curso de la biblioteca, lo que añades tú se marca como propio y sobrevive a las actualizaciones.
+    const edge = addMove(rep, move, { own: Boolean(rep.source) });
+    save(rep);
     enter(edge);
   }
 
@@ -369,7 +370,8 @@ export function renderEditor(root, { id, ruta = '' }) {
           const text = e.target.value.trim();
           if (text) move.comment = text;
           else delete move.comment;
-          save();
+          move.commentEdited = true;
+          save(rep);
         }, 300);
       },
     });
@@ -384,6 +386,20 @@ export function renderEditor(root, { id, ruta = '' }) {
       h('summary', null, `Curso de la biblioteca · nivel ${LEVELS[rep.source.level].name}`),
       h('p', null, course.intro),
       h('ul', null, course.covers.map((c) => h('li', null, c))),
+      isOutdated(rep)
+        ? h('div', { class: 'notice warn' },
+            'Hay una versión mejorada de este curso. Al actualizar conservas tu progreso y tus jugadas propias. ',
+            h('button', {
+              class: 'btn',
+              onClick: () => {
+                const snap = snapshot();
+                const result = updateCourse(rep);
+                sync();
+                toast(updateMessage(result), 'ok', { label: 'Deshacer', onClick: () => undoTo(snap) });
+              },
+            }, 'Actualizar curso'),
+          )
+        : null,
       next < course.levels.length
         ? h('button', {
             class: 'btn',
@@ -391,10 +407,7 @@ export function renderEditor(root, { id, ruta = '' }) {
               const snap = snapshot();
               const added = expandCourse(rep, next);
               sync();
-              toast(`Ampliado a ${LEVELS[next].name}: ${added} jugadas nuevas`, 'ok', { label: 'Deshacer', onClick: () => {
-                rep.source.level = next - 1;
-                undoTo(snap);
-              } });
+              toast(`Ampliado a ${LEVELS[next].name}: ${added} jugadas nuevas`, 'ok', { label: 'Deshacer', onClick: () => undoTo(snap) });
             },
           }, `Ampliar a ${LEVELS[next].name}`)
         : null,
@@ -404,7 +417,7 @@ export function renderEditor(root, { id, ruta = '' }) {
   // Copia del repertorio y de la línea actual para poder deshacer borrados e importaciones.
   function snapshot() {
     return {
-      data: JSON.stringify({ positions: rep.positions, cards: rep.cards }),
+      data: JSON.stringify({ positions: rep.positions, cards: rep.cards, source: rep.source }),
       ucis: fullPath.map((s) => s.move.uci),
       cursor,
     };
@@ -412,7 +425,8 @@ export function renderEditor(root, { id, ruta = '' }) {
 
   function undoTo(snap) {
     Object.assign(rep, JSON.parse(snap.data));
-    save();
+    if (!rep.source) delete rep.source;
+    save(rep);
     fullPath = pathFromUcis(rep, snap.ucis) ?? [];
     cursor = Math.min(snap.cursor, fullPath.length);
     sync();
@@ -424,7 +438,9 @@ export function renderEditor(root, { id, ruta = '' }) {
     const idx = fullPath.findIndex((s) => s.from === fromKey && s.move.uci === move.uci);
     const before = Object.keys(rep.positions).length;
     deleteMove(rep, fromKey, move.uci);
-    save();
+    // Si es una jugada del curso, se recuerda para que una actualización no la devuelva.
+    if (rep.source && !move.own) rep.source.removed = [...(rep.source.removed ?? []), `${fromKey}|${move.uci}`];
+    save(rep);
     if (idx !== -1) {
       fullPath = fullPath.slice(0, idx);
       cursor = Math.min(cursor, idx);
@@ -438,7 +454,7 @@ export function renderEditor(root, { id, ruta = '' }) {
     const list = rep.positions[fromKey].moves;
     list.splice(list.indexOf(move), 1);
     list.unshift(move);
-    save();
+    save(rep);
     renderPanel();
   }
 
@@ -499,8 +515,8 @@ export function renderEditor(root, { id, ruta = '' }) {
           class: 'btn primary',
           onClick: () => {
             const snap = snapshot();
-            const { added, errors } = importPgn(rep, textarea.value);
-            save();
+            const { added, errors } = importPgn(rep, textarea.value, { own: Boolean(rep.source) });
+            save(rep);
             close();
             sync();
             const undo = added ? { label: 'Deshacer', onClick: () => undoTo(snap) } : null;

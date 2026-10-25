@@ -4,6 +4,7 @@ import { getData, addRepertoire, removeRepertoire, save, exportBackup, importBac
 import { newRepertoire, importPgn, exportPgn, repStats, weakKeys } from '../repertoire.js';
 import { describeDue } from '../srs.js';
 import { LEVELS } from '../library.js';
+import { outdatedReps, updateCourse, updateMessage } from '../courses.js';
 
 export function renderHome(root) {
   const data = getData();
@@ -27,6 +28,7 @@ export function renderHome(root) {
         ? `Estás al día. Tienes ${totals.fresh} jugadas nuevas por aprender.`
         : 'Estás al día con tus repasos. ¡Buen trabajo!';
 
+  const outdated = outdatedReps();
   const days = streak();
   const firstPending = reps.find((rep) => pendingCount(rep) > 0);
   const allPending = reps.reduce((n, rep) => n + pendingCount(rep), 0);
@@ -43,13 +45,35 @@ export function renderHome(root) {
           ? h('a', { class: 'btn primary big', href: `#/entrenar/${firstPending.id}?todo=1` }, `Repasar todo (${allPending})`)
           : null,
       ),
+      outdated.length
+        ? h('div', { class: 'update-banner' },
+            h('span', null,
+              h('strong', null, `Hay mejoras en ${outdated.length === 1 ? '1 curso' : `${outdated.length} cursos`} de la biblioteca que tienes`),
+              h('span', { class: 'muted small' }, ` (${outdated.map((r) => r.name).join(', ')}). Se conserva tu progreso y las jugadas que añadiste tú.`),
+            ),
+            h('button', {
+              class: 'btn primary',
+              onClick: () => {
+                let added = 0;
+                let removed = 0;
+                for (const rep of outdated) {
+                  const r = updateCourse(rep);
+                  added += r.added;
+                  removed += r.removed;
+                }
+                toast(updateMessage({ added, removed }).replace('Curso actualizado', outdated.length > 1 ? 'Cursos actualizados' : 'Curso actualizado'), 'ok');
+                rerender();
+              },
+            }, 'Actualizar ahora'),
+          )
+        : null,
       reps.length
         ? null
         : h('a', { class: 'library-cta', href: '#/biblioteca' },
             h('span', { class: 'library-cta-icon' }, '📚'),
             h('span', null,
               h('strong', null, 'Empieza con la biblioteca de aperturas'),
-              h('span', { class: 'muted' }, '11 cursos con explicaciones y variantes del rival: Italiana, Londres, Caro-Kann, Siciliana, Eslava, India de Rey…'),
+              h('span', { class: 'muted' }, '17 cursos con explicaciones y variantes del rival: Italiana, Española, Londres, Gambito de Dama, Caro-Kann, Siciliana, Eslava, India de Rey, Petrov…'),
             ),
             h('span', { class: 'btn primary' }, 'Ver cursos →'),
           ),
@@ -126,7 +150,7 @@ function menu(rep) {
           const name = prompt('Nuevo nombre del repertorio:', rep.name);
           if (name?.trim()) {
             rep.name = name.trim();
-            save();
+            save(rep);
             rerender();
           }
         },

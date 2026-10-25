@@ -273,7 +273,7 @@ function prepareReply(r) {
   if (!rep?.positions[r.key]) return;
   const move = moveFromUci(new Chess(rep.positions[r.key].fen), r.playedUci);
   if (!move) return;
-  addMove(rep, move);
-  save();
+  addMove(rep, move, { own: Boolean(rep.source) });
+  save(rep);
   location.hash = `#/editar/${rep.id}?ruta=${[...pathUcis(r), r.playedUci].join(',')}`;
 }

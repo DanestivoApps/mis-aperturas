@@ -5,6 +5,7 @@ import './style.css';
 
 import { applyBoardTheme } from './board.js';
 import { closeDialogs } from './dom.js';
+import { startAutoSync } from './sync.js';
 import { renderHome } from './views/home.js';
 import { renderEditor } from './views/editor.js';
 import { renderTrain } from './views/train.js';
@@ -63,6 +64,13 @@ document.addEventListener('click', (e) => {
 applyBoardTheme();
 window.addEventListener('hashchange', route);
 route();
+
+// Si llegan cambios de otro dispositivo, se redibujan las pantallas de consulta
+// (no el editor ni el entrenamiento, para no interrumpirte).
+startAutoSync(() => {
+  const hash = location.hash || '#/';
+  if (/^#\/?(biblioteca|estadisticas)?$/.test(hash)) route();
+});
 
 // En la versión publicada, la app se puede instalar y usar sin conexión.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

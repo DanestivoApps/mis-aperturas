@@ -6,8 +6,12 @@ te lo pregunta con repetición espaciada.
 **Úsala aquí: https://danestivoapps.github.io/mis-aperturas/**
 
 En el móvil puedes instalarla: en Android (Chrome), menú ⋮ → «Instalar app»; en iPhone
-(Safari), Compartir → «Añadir a pantalla de inicio». Cada dispositivo guarda sus propios
-repertorios: para pasarlos de uno a otro usa «Descargar copia de seguridad» y «Restaurar copia».
+(Safari), Compartir → «Añadir a pantalla de inicio».
+
+**Sincronizar móvil y ordenador:** en Ajustes → «Sincronizar entre dispositivos», pega un token
+de GitHub con permiso `gist` (el enlace ya lo deja preparado) en cada dispositivo. Los
+repertorios y el progreso se guardan en un gist privado y se fusionan sin perder nada: gana la
+versión más reciente de cada repertorio y el repaso más reciente de cada posición.
 
 ## Publicación
 
@@ -49,19 +53,26 @@ las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **A
 | Con blancas | Con negras |
 | --- | --- |
 | Partida Italiana (contra 1...e5) | Defensa Caro-Kann (contra 1.e4) |
-| Sistema Londres (1.d4) | Siciliana: Dragón Acelerado (contra 1.e4) |
+| Apertura Española (contra 1...e5) | Siciliana: Dragón Acelerado (contra 1.e4) |
+| Sistema Londres (1.d4) | Defensa Petrov (contra 1.e4 e5, y todo lo demás tras 1...e5) |
+| Gambito de Dama (contra 1...d5) | Defensa Escandinava (contra 1.e4) |
 | Contra la Siciliana: Alapin | Defensa Eslava (contra 1.d4) |
-| Contra la Francesa: Avance | India de Rey (contra 1.d4) |
-| Contra la Caro-Kann: Avance | |
-| Contra la Escandinava | |
+| Contra la Francesa: Avance | Gambito de Dama Aceptado (contra 1.d4) |
+| Contra la Caro-Kann: Avance | India de Rey (contra 1.d4) |
+| Contra la Escandinava | Contra la Inglesa y la Réti (encaja con Caro-Kann y Eslava) |
 | Contra Pirc, Moderna y Alekhine | |
 
+Si se mejora un curso que ya tienes, la app avisa y lo actualiza conservando tu progreso, las
+jugadas que añadiste tú y las que borraste a propósito.
+
 Calidad: los tests comprueban que todas las jugadas son legales, que no hay posiciones sin
-respuesta ni dos jugadas tuyas en la misma posición. Además, todas tus jugadas (unas 670
-posiciones) se revisaron con la nube de Lichess y con Stockfish 19 (profundidad 16, y 22 en
-los casos dudosos), y se corrigieron las que perdían ventaja. Solo quedan dos decisiones de
-sistema a menos de medio peón de la mejor jugada: 5.d3 contra 3...d6 en la Italiana (el
-comentario menciona la alternativa 5.Cg5) y 3.Af4 contra 1...g6 en el Londres.
+respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 17 cursos
+(las tuyas y las del rival) se revisaron con Stockfish 19 a profundidad 18, y 20–22 en los casos
+dudosos, y se corrigieron las que perdían ventaja. Las jugadas del rival que son errores graves
+son trampas a propósito y están explicadas. Las afirmaciones concretas de los comentarios
+(«si ...Dxb2, Db1», etc.) también se comprobaron con el motor. Solo quedan elecciones de
+sistema a menos de medio peón de la mejor jugada (5.d3 contra 3...d6 en la Italiana, 3.c3 y
+3.Af4 en el Londres, y la propia 1...d5 de la Escandinava).
 
 Al aprender una jugada nueva, la app te enseña su explicación antes de que la juegues.
 
@@ -124,7 +135,8 @@ La evaluación y la importación de estudios públicos funcionan sin token.
 | --- | --- |
 | `src/repertoire.js` | Modelo del repertorio, líneas, huecos, importar/exportar PGN |
 | `src/library.js` | Cursos de la biblioteca (PGN con comentarios, por niveles) |
-| `src/courses.js` | Añadir un curso a tu colección y ampliarlo de nivel |
+| `src/courses.js` | Añadir, ampliar y actualizar cursos conservando tu progreso |
+| `src/sync.js` | Sincronización entre dispositivos (gist privado de GitHub) |
 | `src/notation.js` | Notación española (C, A, T, D, R) o inglesa |
 | `src/srs.js` | Repetición espaciada (variante de SM-2) |
 | `src/session.js` | Qué línea toca repasar y qué posiciones son débiles |

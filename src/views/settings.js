@@ -1,9 +1,10 @@
-// Ajustes: entrenamiento, tablero, sonido y conexión con Lichess.
-import { h, toast } from '../dom.js';
+// Ajustes: entrenamiento, notación, tablero, sincronización y conexión con Lichess.
+import { h, fill, toast } from '../dom.js';
 import { getSettings, updateSettings, DEFAULT_SETTINGS } from '../store.js';
 import { BOARD_THEMES, applyBoardTheme, createBoard } from '../board.js';
 import { play } from '../sound.js';
 import { TOKEN_URL } from '../lichess.js';
+import { syncNow, syncError, TOKEN_URL as SYNC_TOKEN_URL } from '../sync.js';
 
 const SPEEDS = [
   { value: 200, label: 'Rápida' },
@@ -123,6 +124,8 @@ export function renderSettings(root) {
         }),
       ),
 
+      syncCard(),
+
       h('div', { class: 'card settings-card' },
         h('h3', null, 'Lichess'),
         toggle('showEval', 'Mostrar la evaluación de Lichess en el editor', 'Usa la evaluación en la nube (no hace falta token).'),
@@ -149,7 +152,8 @@ export function renderSettings(root) {
           class: 'btn ghost',
           onClick: () => {
             if (!confirm('¿Volver a los ajustes por defecto? (Tu token de Lichess se mantiene.)')) return;
-            updateSettings({ ...DEFAULT_SETTINGS, lichessToken: getSettings().lichessToken });
+            const keep = ['lichessToken', 'syncToken', 'syncGistId', 'lastSync', 'deviceId'];
+            updateSettings({ ...DEFAULT_SETTINGS, ...Object.fromEntries(keep.map((k) => [k, getSettings()[k]])) });
             applyBoardTheme();
             window.dispatchEvent(new HashChangeEvent('hashchange'));
           },
@@ -157,6 +161,83 @@ export function renderSettings(root) {
       ),
     ),
   );
+
+  // Sincronización entre dispositivos con un gist privado de GitHub.
+  function syncCard() {
+    const card = h('div', { class: 'card settings-card' });
+    const status = h('p', { class: 'muted small', 'aria-live': 'polite' });
+
+    const run = async (button) => {
+      button.disabled = true;
+      status.textContent = 'Sincronizando…';
+      try {
+        const { changed } = await syncNow();
+        status.textContent = changed ? 'Sincronizado: han llegado cambios de otro dispositivo.' : 'Sincronizado.';
+        renderCard();
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        button.disabled = false;
+      }
+    };
+
+    function renderCard() {
+      const connected = Boolean(getSettings().syncToken);
+      const last = getSettings().lastSync;
+      if (!connected) {
+        const tokenInput = h('input', { type: 'password', autocomplete: 'off', placeholder: 'ghp_…' });
+        const connectBtn = h('button', {
+          class: 'btn primary',
+          onClick: async (e) => {
+            const token = tokenInput.value.trim();
+            if (!token) return toast('Pega primero el token', 'error');
+            updateSettings({ syncToken: token, syncGistId: '' });
+            await run(e.currentTarget);
+            if (!getSettings().lastSync) updateSettings({ syncToken: '' }); // no funcionó: no se guarda
+            renderCard();
+          },
+        }, 'Conectar y sincronizar');
+        fill(card,
+          h('h3', null, 'Sincronizar entre dispositivos'),
+          h('p', { class: 'small' },
+            'Ten los mismos repertorios y el mismo progreso en el móvil y en el ordenador. Se guardan en un gist privado de tu cuenta de GitHub.'),
+          h('ol', { class: 'small steps' },
+            h('li', null, h('a', { href: SYNC_TOKEN_URL, target: '_blank', rel: 'noopener' }, 'Crea un token de GitHub'),
+              ' con el permiso «gist» (ya viene marcado) y sin caducidad o con la que prefieras.'),
+            h('li', null, 'Pégalo aquí y pulsa «Conectar». Haz lo mismo en tus otros dispositivos con el mismo token.'),
+          ),
+          h('label', { class: 'field' }, h('span', null, 'Token de GitHub'), tokenInput),
+          h('div', { class: 'actions' }, connectBtn),
+          status,
+          h('p', { class: 'muted small' }, 'El token se guarda solo en este dispositivo y no se incluye en las copias de seguridad.'),
+        );
+        return;
+      }
+      const error = syncError();
+      fill(card,
+        h('h3', null, 'Sincronizar entre dispositivos'),
+        h('p', { class: 'small' },
+          '✓ Conectado. Se sincroniza solo al abrir la app, al volver a ella y unos segundos después de cada cambio.'),
+        last ? h('p', { class: 'muted small' }, `Última sincronización: ${new Date(last).toLocaleString('es')}`) : null,
+        error ? h('p', { class: 'notice warn' }, error) : null,
+        h('div', { class: 'actions' },
+          h('button', { class: 'btn primary', onClick: (e) => run(e.currentTarget) }, 'Sincronizar ahora'),
+          h('button', {
+            class: 'btn ghost',
+            onClick: () => {
+              if (!confirm('¿Desconectar este dispositivo? Tus datos se quedan aquí y en GitHub; solo deja de sincronizarse.')) return;
+              updateSettings({ syncToken: '', syncGistId: '', lastSync: 0 });
+              renderCard();
+            },
+          }, 'Desconectar'),
+        ),
+        status,
+      );
+    }
+
+    renderCard();
+    return card;
+  }
 
   const preview = createBoard(previewEl, { viewOnly: true, fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3' });
   return () => preview.destroy();

@@ -1,6 +1,6 @@
 // Estadísticas: racha, precisión, respuestas por día, previsión y puntos débiles.
 import { h } from '../dom.js';
-import { getData, dayKey, streak } from '../store.js';
+import { getData, dayKey, streak, combinedHistory } from '../store.js';
 import { repStats, trainableKeys, weakKeys, pathTo, pathToText } from '../repertoire.js';
 import { columnChart } from '../chart.js';
 import { san } from '../notation.js';
@@ -10,7 +10,8 @@ const fmtDay = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' })
 const fmtWeekday = new Intl.DateTimeFormat('es', { weekday: 'short', day: 'numeric' });
 
 export function renderStats(root) {
-  const { repertoires: reps, history } = getData();
+  const { repertoires: reps } = getData();
+  const history = combinedHistory(); // suma de todos tus dispositivos
   const cleanups = [];
 
   // Últimos 30 días de respuestas.

@@ -1,7 +1,7 @@
 // Biblioteca: cursos listos para añadir, con niveles de profundidad (como en Chessreps).
 import { h, fill, toast } from '../dom.js';
 import { COURSES, LEVELS } from '../library.js';
-import { ownedFrom, addCourse, expandCourse, levelStats } from '../courses.js';
+import { ownedFrom, addCourse, expandCourse, updateCourse, updateMessage, isOutdated, levelStats } from '../courses.js';
 
 const FILTERS = [
   { id: 'all', label: 'Todos' },
@@ -84,7 +84,18 @@ export function renderLibrary(root) {
         return;
       }
       const maxed = owned.source.level >= course.levels.length - 1;
+      const outdated = isOutdated(owned);
       fill(action,
+        outdated
+          ? h('button', {
+              class: 'btn primary',
+              title: 'Aplica las correcciones y novedades del curso conservando tu progreso',
+              onClick: () => {
+                toast(updateMessage(updateCourse(owned)), 'ok');
+                renderGrid();
+              },
+            }, 'Actualizar curso')
+          : null,
         h('a', { class: 'btn primary', href: `#/entrenar/${owned.id}` }, 'Entrenar'),
         h('a', { class: 'btn', href: `#/editar/${owned.id}` }, 'Ver jugadas'),
         maxed
@@ -108,7 +119,11 @@ export function renderLibrary(root) {
           h('h2', null, course.name),
           h('span', { class: 'muted small' }, `${isWhite ? 'Blancas' : 'Negras'} · contra ${course.against}`),
         ),
-        owned ? h('span', { class: 'chip due', title: 'Ya está en tus repertorios' }, `✓ ${LEVELS[owned.source.level].name}`) : null,
+        owned
+          ? isOutdated(owned)
+            ? h('span', { class: 'chip warn', title: 'Hay una versión mejorada de este curso' }, 'Actualización')
+            : h('span', { class: 'chip due', title: 'Ya está en tus repertorios' }, `✓ ${LEVELS[owned.source.level].name}`)
+          : null,
       ),
       h('p', { class: 'tagline' }, course.tagline),
       h('details', { class: 'course-details' },
