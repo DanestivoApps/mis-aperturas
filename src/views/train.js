@@ -17,6 +17,7 @@ import { colorToMove, destsFor, squaresOf, tryMove, uciOf } from '../chess-utils
 import { loadOpenings, openingForPath } from '../openings.js';
 import { play, playMove } from '../sound.js';
 import { san, pieceHint } from '../notation.js';
+import { icon } from '../icons.js';
 
 const MODES = {
   repaso: 'Repaso con repetición espaciada.',
@@ -108,13 +109,14 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const comment = h('div', { class: 'train-comment' });
   const openingEl = h('div', { class: 'opening-name' });
   const moveText = h('p', { class: 'line-text' });
+  const dots = h('div', { class: 'line-dots', title: 'Tus jugadas en esta línea' });
   const counters = h('div', { class: 'chips' });
   const summary = h('div', { class: 'train-summary' });
   const modeText = h('p', { class: 'muted small' }, MODES[modo], prefix.length ? ' Desde la posición elegida.' : '');
-  const hintBtn = h('button', { class: 'btn', onClick: showHint, title: 'Primero te marca la pieza; si vuelves a pulsar, la jugada (atajo: H)' }, 'Pista');
+  const hintBtn = h('button', { class: 'btn', onClick: showHint, title: 'Primero te marca la pieza; si vuelves a pulsar, la jugada (atajo: H)' }, icon('bulb'), 'Pista');
   const nextBtn = h('button', { class: 'btn primary', hidden: true, onClick: nextLine, title: 'Atajo: Enter' }, 'Siguiente línea →');
-  const skipBtn = h('button', { class: 'btn', hidden: preview, onClick: skipLine, title: 'Atajo: S' }, 'Saltar línea');
-  const repeatBtn = h('button', { class: 'btn', onClick: repeatLine, title: 'Vuelve a jugar esta línea desde el principio (atajo: R)' }, '↺ Repetir línea');
+  const skipBtn = h('button', { class: 'btn', hidden: preview, onClick: skipLine, title: 'Atajo: S' }, icon('skip'), 'Saltar');
+  const repeatBtn = h('button', { class: 'btn', onClick: repeatLine, title: 'Vuelve a jugar esta línea desde el principio (atajo: R)' }, icon('repeat'), 'Repetir');
   const baseActions = [nextBtn, hintBtn, repeatBtn, skipBtn];
   const actions = h('div', { class: 'actions' }, baseActions);
   // Cabecera: arriba del todo en el móvil, encima del panel en el ordenador.
@@ -133,7 +135,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const panel = h('div', { class: 'panel' },
     feedback,
     comment,
-    h('div', { class: 'card' }, h('h3', null, 'Línea'), openingEl, moveText),
+    h('div', { class: 'card' }, h('div', { class: 'card-row' }, h('h3', null, 'Línea'), dots), openingEl, moveText),
     actions,
     summary,
     h('button', { type: 'button', class: 'link-btn keys-hint', onClick: showShortcuts }, '⌨ Atajos de teclado (?)'),
@@ -171,8 +173,9 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     movable: { free: false, color: undefined, showDests: true, events: { after: onUserMove } },
   });
 
+  const FEEDBACK_ICONS = { ok: 'check', bad: 'x', warn: 'alert', info: 'bulb' };
   function say(text, kind = 'neutral') {
-    feedback.textContent = text;
+    fill(feedback, FEEDBACK_ICONS[kind] ? icon(FEEDBACK_ICONS[kind]) : null, h('span', null, text));
     feedback.dataset.kind = kind;
   }
 
@@ -213,6 +216,16 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     const opening = openingForPath(played);
     fill(openingEl, opening ? [h('span', { class: 'eco' }, opening.eco), ' ', opening.name] : null);
     updateNav();
+  }
+
+  // Un punto por cada jugada tuya de la línea: acierto, fallo, aprendida, la actual o pendiente.
+  function updateDots() {
+    if (!cur) return fill(dots);
+    fill(dots, cur.line.map((step, i) => {
+      if (i < prefix.length || !isUserTurn(rep, step.from)) return null;
+      const state = cur.results[i] ?? (i === cur.idx && cur.awaiting ? 'current' : 'todo');
+      return h('span', { class: `ldot ${state}` });
+    }));
   }
 
   // ---------- Navegación por la línea ----------
@@ -301,6 +314,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       failed: false,
       lineFailed: false,
       assist: session.assist,
+      results: [], // por jugada: 'ok', 'bad' o 'learn'
     };
     fill(comment);
     viewPly = null;
@@ -317,6 +331,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     skipBtn.disabled = false;
     updateCounters();
     updateLineText();
+    updateDots();
     if (!feedback.textContent.startsWith('Otra vez')) say(rep.color === 'white' ? 'Empiezas tú.' : 'El rival empieza…');
     laterInLine(advance, 350);
   }
@@ -378,6 +393,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   function awaitUser(step) {
     const card = rep.cards[step.from];
     cur.awaiting = true;
+    updateDots();
     cur.hinted = false;
     cur.hintLevel = 0;
     cur.failed = false;
@@ -408,6 +424,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     if (uci === step.move.uci) {
       cur.awaiting = false;
       const clean = !cur.failed && !cur.hinted;
+      cur.results[cur.idx] = clean ? 'ok' : cur.failed ? 'bad' : 'learn';
+      updateDots();
       gradeSuccess(step);
       setShapes([]);
       syncBoard([move.from, move.to], false);
@@ -478,6 +496,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   function registerFailure(step, played = null) {
     if (cur.failed) return;
     cur.failed = true;
+    cur.results[cur.idx] = 'bad';
+    updateDots();
     cur.lineFailed = true;
     session.wrong++;
     session.mistakes.set(`${step.from}|${step.move.uci}`, { line: cur.line, idx: cur.idx, played });
@@ -591,6 +611,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
 
   function finish() {
     cur = null;
+    updateDots();
     viewPly = null;
     updateNav();
     board.set({ movable: { color: undefined, dests: new Map() }, drawable: { autoShapes: [] } });

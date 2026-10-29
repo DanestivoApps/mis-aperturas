@@ -4,6 +4,7 @@ import { getData, dayKey, streak, combinedHistory } from '../store.js';
 import { repStats, trainableKeys, weakKeys, pathTo, pathToText } from '../repertoire.js';
 import { columnChart } from '../chart.js';
 import { san } from '../notation.js';
+import { icon } from '../icons.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const fmtDay = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short' });
@@ -49,10 +50,10 @@ export function renderStats(root) {
     h('section', { class: 'page' },
       h('div', { class: 'page-head' }, h('h1', null, 'Tu progreso')),
       h('div', { class: 'tiles' },
-        tile('Racha', `${streak()} ${streak() === 1 ? 'día' : 'días'}`, 'Días seguidos entrenando'),
-        tile('Respuestas hoy', today.total, today.total ? `${pct(today.ok, today.total)}% de aciertos` : 'Aún no has entrenado hoy'),
-        tile('Precisión (30 días)', answered ? `${pct(sum.ok, answered)}%` : '—', `${answered} respuestas`),
-        tile('Jugadas aprendidas', `${learned} / ${totalPositions}`, 'Posiciones tuyas al día'),
+        tile('flame', 'Racha', `${streak()} ${streak() === 1 ? 'día' : 'días'}`, 'Días seguidos entrenando'),
+        tile('calendar', 'Respuestas hoy', today.total, today.total ? `${pct(today.ok, today.total)}% de aciertos` : 'Aún no has entrenado hoy'),
+        tile('target', 'Precisión (30 días)', answered ? `${pct(sum.ok, answered)}%` : '—', `${answered} respuestas`),
+        tile('sparkle', 'Jugadas aprendidas', `${learned} / ${totalPositions}`, 'Posiciones tuyas al día'),
       ),
 
       h('div', { class: 'card chart-card' },
@@ -96,9 +97,9 @@ function pct(part, total) {
   return total ? Math.round((part / total) * 100) : 0;
 }
 
-function tile(label, value, sub) {
+function tile(iconName, label, value, sub) {
   return h('div', { class: 'tile' },
-    h('span', { class: 'tile-label' }, label),
+    h('span', { class: 'tile-label' }, icon(iconName), label),
     h('span', { class: 'tile-value' }, value),
     h('span', { class: 'muted small' }, sub),
   );

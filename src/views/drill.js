@@ -12,6 +12,7 @@ import { colorToMove, destsFor, squaresOf, tryMove, uciOf } from '../chess-utils
 import { play } from '../sound.js';
 import { san } from '../notation.js';
 import { noteAnswer, buzz } from '../feedback.js';
+import { icon } from '../icons.js';
 
 export const DURATIONS = [
   { value: 60, label: '1 min' },
@@ -90,7 +91,7 @@ export function renderDrill(root, { id, nivel = null }) {
     h('section', { class: 'layout with-head' },
       h('div', { class: 'panel-head' },
         h('div', { class: 'head-links' }, h('a', { href: '#/', class: 'back' }, '← Inicio')),
-        h('h1', null, '⏱ Contrarreloj'),
+        h('h1', null, icon('clock'), 'Contrarreloj'),
         h('p', { class: 'muted small' },
           h('span', { class: `piece-badge ${rep.color}` }, rep.color === 'white' ? '♔' : '♚'), ' ', rep.name,
           levelName ? ` · nivel ${levelName}` : '',
@@ -112,8 +113,9 @@ export function renderDrill(root, { id, nivel = null }) {
     movable: { free: false, color: undefined, showDests: true, events: { after: onMove } },
   });
 
+  const FEEDBACK_ICONS = { ok: 'check', bad: 'x', warn: 'alert', info: 'bulb' };
   function say(text, kind = 'neutral') {
-    feedback.textContent = text;
+    fill(feedback, FEEDBACK_ICONS[kind] ? icon(FEEDBACK_ICONS[kind]) : null, h('span', null, text));
     feedback.dataset.kind = kind;
   }
 
@@ -127,7 +129,7 @@ export function renderDrill(root, { id, nivel = null }) {
     fill(scoreEl,
       h('span', { class: 'chip ok' }, `✓ ${score}`),
       h('span', { class: 'chip bad' }, `✗ ${misses}`),
-      h('span', { class: 'chip', title: 'Tu mejor marca con esta duración' }, `🏆 ${record()}`),
+      h('span', { class: 'chip', title: 'Tu mejor marca con esta duración' }, icon('trophy'), String(record())),
     );
   }
 

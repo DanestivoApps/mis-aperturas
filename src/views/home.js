@@ -3,7 +3,9 @@ import { h, toast, download, safeFilename, openDialog, dropdown } from '../dom.j
 import { getData, addRepertoire, removeRepertoire, save, streak, todayCount } from '../store.js';
 import { newRepertoire, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
 import { describeDue } from '../srs.js';
-import { LEVELS, COURSES } from '../library.js';
+import { LEVELS, COURSES, getCourse } from '../library.js';
+import { icon } from '../icons.js';
+import { miniBoard, courseFen, repFen } from '../miniboard.js';
 import { outdatedReps, updateCourse, updateMessage, restoreCourse, repSnapshot, restoreSnapshot } from '../courses.js';
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -22,8 +24,8 @@ export function renderHome(root) {
     h('div', { class: 'section-head' },
       h('h2', null, 'Tus repertorios'),
       h('div', { class: 'section-actions' },
-        h('button', { class: 'btn', onClick: newRepDialog }, '+ Nuevo'),
-        h('a', { class: 'btn', href: '#/biblioteca' }, 'Biblioteca'),
+        h('button', { class: 'btn', onClick: newRepDialog }, icon('plus'), 'Nuevo'),
+        h('a', { class: 'btn', href: '#/biblioteca' }, icon('book'), 'Biblioteca'),
       ),
     ),
     h('div', { class: 'rep-grid' }, reps.map(repCard)),
@@ -60,32 +62,38 @@ function today(reps) {
   return h('div', { class: `today ${pending ? '' : 'done'}` },
     h('div', { class: 'today-main' },
       h('p', { class: 'today-label' }, 'Hoy'),
-      h('h1', null, pending ? plural(pending, 'jugada pendiente', 'jugadas pendientes') : 'Estás al día ✓'),
+      h('h1', null, pending ? plural(pending, 'jugada pendiente', 'jugadas pendientes') : 'Estás al día'),
       h('p', { class: 'muted' }, detail),
-      h('div', { class: 'today-meta' },
-        days ? h('span', { class: 'streak', title: 'Días seguidos entrenando' }, `🔥 ${plural(days, 'día seguido', 'días seguidos')}`) : null,
-        goalMeter(settings.dailyGoal),
+      h('div', { class: 'today-actions' },
+        pending
+          ? h('a', { class: 'btn primary big', href: `#/entrenar/${pendingReps[0].id}?todo=1` }, icon('play'), 'Empezar a entrenar')
+          : h('a', { class: 'btn big', href: '#/biblioteca' }, icon('book'), 'Aprender otra apertura'),
+        days
+          ? h('span', { class: 'streak', title: 'Días seguidos entrenando' }, icon('flame'), plural(days, 'día seguido', 'días seguidos'))
+          : null,
       ),
     ),
-    pending
-      ? h('a', { class: 'btn primary big', href: `#/entrenar/${pendingReps[0].id}?todo=1` }, 'Empezar a entrenar')
-      : h('a', { class: 'btn big', href: '#/biblioteca' }, 'Aprender otra apertura'),
+    goalRing(settings.dailyGoal),
   );
 }
 
-// Jugadas respondidas hoy frente al objetivo diario (Ajustes).
-function goalMeter(goal) {
+// Anillo con las jugadas respondidas hoy frente al objetivo diario (Ajustes).
+function goalRing(goal) {
   if (!goal) return null;
   const count = todayCount();
   const done = count >= goal;
-  const pct = Math.min(100, Math.round((count / goal) * 100));
-  return h('div', { class: `goal ${done ? 'done' : ''}`, title: 'Jugadas respondidas hoy. Cambia el objetivo en Ajustes.' },
-    h('div', {
-      class: 'progress', role: 'progressbar', 'aria-label': 'Objetivo de hoy',
-      'aria-valuemin': '0', 'aria-valuemax': String(goal), 'aria-valuenow': String(Math.min(count, goal)),
-    }, h('span', { style: `width:${pct}%` })),
-    h('span', { class: 'goal-text' }, done ? `Objetivo cumplido ✓ (${count}/${goal})` : `Objetivo: ${count}/${goal}`),
-  );
+  const length = 2 * Math.PI * 34;
+  const ring = h('div', {
+    class: `goal-ring ${done ? 'done' : ''}`,
+    role: 'img',
+    'aria-label': `Objetivo de hoy: ${count} de ${goal} jugadas`,
+    title: 'Jugadas respondidas hoy. Cambia el objetivo en Ajustes.',
+  });
+  ring.innerHTML = `<svg viewBox="0 0 80 80"><circle class="track" cx="40" cy="40" r="34"/><circle class="fill" cx="40" cy="40" r="34" stroke-dasharray="${length.toFixed(1)}" stroke-dashoffset="${(length * (1 - Math.min(1, count / goal))).toFixed(1)}"/></svg>`;
+  ring.append(h('div', { class: 'goal-ring-text' },
+    done ? icon('check') : h('strong', null, String(count)),
+    h('span', null, done ? 'objetivo' : `de ${goal}`)));
+  return ring;
 }
 
 function updateBanner() {
@@ -123,20 +131,26 @@ function repCard(rep) {
   const isWhite = rep.color === 'white';
   const freshToday = Math.min(s.fresh, settings.newPerSession);
 
+  const course = getCourse(rep.source?.course);
   return h('article', { class: 'rep-card' },
-    h('div', { class: 'rep-card-head' },
-      h('span', { class: `piece-badge ${rep.color}`, title: isWhite ? 'Blancas' : 'Negras' }, isWhite ? '♔' : '♚'),
-      h('div', { class: 'rep-title' },
-        h('h3', null, rep.name),
-        h('span', { class: 'muted small' },
-          isWhite ? 'Blancas' : 'Negras',
-          rep.source ? ` · ${LEVELS[rep.source.level]?.name ?? ''}` : ''),
-      ),
-      repMenu(rep, s),
-    ),
-    h('div', { class: 'rep-progress' },
+    h('div', { class: 'rep-card-top' },
+      h('a', { class: 'rep-thumb', href: `#/editar/${rep.id}`, tabindex: '-1', title: 'Ver las jugadas' },
+        miniBoard(course ? courseFen(course) : repFen(rep), rep.color)),
+      h('div', { class: 'rep-info' },
+        h('div', { class: 'rep-card-head' },
+          h('div', { class: 'rep-title' },
+            h('h3', null, rep.name),
+            h('span', { class: 'muted small' },
+              h('span', { class: `side-dot ${rep.color}` }), isWhite ? 'Blancas' : 'Negras',
+              rep.source ? ` · ${LEVELS[rep.source.level]?.name ?? ''}` : ''),
+          ),
+          repMenu(rep, s),
+        ),
+        h('div', { class: 'rep-progress' },
       h('div', { class: 'progress', title: `${pct}% aprendido` }, h('span', { style: `width:${pct}%` })),
-      h('span', { class: 'muted small' }, s.total ? `${s.learned} de ${s.total} aprendidas` : 'Sin jugadas todavía'),
+          h('span', { class: 'muted small' }, s.total ? `${s.learned} de ${s.total} aprendidas` : 'Sin jugadas todavía'),
+        ),
+      ),
     ),
     h('div', { class: 'chips' },
       s.due ? h('span', { class: 'chip due' }, `${s.due} para repasar`) : null,
@@ -162,7 +176,7 @@ function repMenu(rep, s) {
   return dropdown('⋯', [
     s.total ? { label: 'Práctica libre', href: `#/entrenar/${rep.id}?modo=libre`, title: 'Todas las líneas en orden aleatorio, sin tocar tus fechas de repaso' } : null,
     weak ? { label: `Repasar mis errores (${weak})`, href: `#/entrenar/${rep.id}?modo=errores` } : null,
-    s.total ? { label: '⏱ Contrarreloj', href: `#/contrarreloj/${rep.id}` } : null,
+    s.total ? { label: 'Contrarreloj', href: `#/contrarreloj/${rep.id}` } : null,
     s.total ? 'sep' : null,
     { label: 'Renombrar', onClick: () => renameRep(rep) },
     {
@@ -280,21 +294,21 @@ function welcome() {
     h('p', { class: 'muted' },
       'El rival juega las jugadas de tu repertorio y tú respondes. La repetición espaciada te pregunta cada jugada justo antes de que la olvides.'),
     h('a', { class: 'welcome-option primary', href: '#/biblioteca' },
-      h('span', { class: 'welcome-icon' }, '📚'),
+      h('span', { class: 'welcome-icon' }, icon('book')),
       h('span', null,
         h('strong', null, 'Elige un curso de la biblioteca'),
         h('span', { class: 'muted small' },
           `${COURSES.length} cursos con la idea de cada jugada explicada: Italiana, Española, Londres, Caro-Kann, Najdorf, Nimzoindia…`),
       ),
-      h('span', { class: 'welcome-arrow' }, '→'),
+      h('span', { class: 'welcome-arrow' }, icon('arrow')),
     ),
     h('button', { class: 'welcome-option', type: 'button', onClick: newRepDialog },
-      h('span', { class: 'welcome-icon' }, '✏️'),
+      h('span', { class: 'welcome-icon' }, icon('pencil')),
       h('span', null,
         h('strong', null, 'Crea tu propio repertorio'),
         h('span', { class: 'muted small' }, 'Juega las jugadas en el tablero o importa un PGN.'),
       ),
-      h('span', { class: 'welcome-arrow' }, '→'),
+      h('span', { class: 'welcome-arrow' }, icon('arrow')),
     ),
     h('p', { class: 'muted small' }, '¿Tienes una copia de seguridad o usas otro dispositivo? Ve a ',
       h('a', { href: '#/ajustes' }, 'Ajustes'), '.'),

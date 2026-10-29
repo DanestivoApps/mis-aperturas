@@ -1,6 +1,7 @@
 // Biblioteca: cursos listos para añadir, con niveles de profundidad (como en Chessreps).
 import { h, fill, toast } from '../dom.js';
 import { COURSES, LEVELS } from '../library.js';
+import { miniBoard, courseFen } from '../miniboard.js';
 import {
   ownedFrom, addCourse, expandCourse, updateCourse, updateMessage, isOutdated, levelStats, levelProgress,
   relearnLevel, repSnapshot, restoreSnapshot,
@@ -204,10 +205,10 @@ export function renderLibrary(root) {
 
     return h('article', { class: `rep-card course-card ${owned ? 'owned' : ''}` },
       h('div', { class: 'rep-card-head' },
-        h('span', { class: `piece-badge ${course.color}`, title: isWhite ? 'Con blancas' : 'Con negras' }, isWhite ? '♔' : '♚'),
+        h('div', { class: 'course-thumb', title: isWhite ? 'Con blancas' : 'Con negras' }, miniBoard(courseFen(course), course.color)),
         h('div', { class: 'rep-title' },
           h('h2', null, course.name),
-          h('span', { class: 'muted small' }, `${isWhite ? 'Blancas' : 'Negras'} · contra ${course.against}`),
+          h('span', { class: 'muted small' }, h('span', { class: `side-dot ${course.color}` }), `${isWhite ? 'Blancas' : 'Negras'} · contra ${course.against}`),
         ),
         owned
           ? isOutdated(owned)

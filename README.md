@@ -50,6 +50,9 @@ El inicio muestra lo que toca hoy (jugadas pendientes, racha y objetivo diario) 
 botón para empezar, y tus repertorios con «Entrenar» y «Editar»; el resto de opciones está en
 su menú ⋯. En el móvil, la navegación es una barra fija abajo y, al entrenar o editar, el
 tablero ocupa la pantalla con el título arriba. Tema claro, oscuro o automático.
+Cada repertorio y cada curso muestra una miniatura de su posición característica; el objetivo
+diario es un anillo de progreso, y al entrenar una fila de puntos marca tus jugadas de la línea
+(acierto, fallo, aprendida y la actual). Tipografía Inter, incluida en la app (funciona sin conexión).
 
 ### Biblioteca de aperturas
 Cursos listos para añadir, al estilo de Chessreps, con la idea de cada jugada explicada y
