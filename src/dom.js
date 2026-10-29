@@ -86,3 +86,28 @@ export function openDialog(title, ...content) {
 export function closeDialogs() {
   document.querySelectorAll('dialog').forEach((d) => d.remove());
 }
+
+// Menú desplegable (⋯). `items`: { label, onClick?, href?, title?, danger? } o 'sep' para separar grupos.
+export function dropdown(summary, items, { label = 'Más opciones', className = '' } = {}) {
+  const details = h('details', { class: `menu ${className}` });
+  const close = () => (details.open = false);
+  const list = h('div', { class: 'menu-list', role: 'menu' },
+    items.filter(Boolean).map((item) => {
+      if (item === 'sep') return h('hr', { class: 'menu-sep' });
+      const props = {
+        class: item.danger ? 'danger' : null,
+        title: item.title,
+        role: 'menuitem',
+        onClick: (e) => {
+          close();
+          item.onClick?.(e);
+        },
+      };
+      return item.href
+        ? h('a', { ...props, href: item.href, target: item.external ? '_blank' : null, rel: item.external ? 'noopener' : null }, item.label)
+        : h('button', { ...props, type: 'button' }, item.label);
+    }),
+  );
+  details.append(h('summary', { class: 'menu-btn', 'aria-label': label, title: label }, summary), list);
+  return details;
+}

@@ -45,6 +45,12 @@ Lichess y Chess.com sí necesitan internet).
 
 ## Qué hace
 
+### Interfaz
+El inicio muestra lo que toca hoy (jugadas pendientes, racha y objetivo diario) con un único
+botón para empezar, y tus repertorios con «Entrenar» y «Editar»; el resto de opciones está en
+su menú ⋯. En el móvil, la navegación es una barra fija abajo y, al entrenar o editar, el
+tablero ocupa la pantalla con el título arriba. Tema claro, oscuro o automático.
+
 ### Biblioteca de aperturas
 Cursos listos para añadir, al estilo de Chessreps, con la idea de cada jugada explicada y
 las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **Avanzado**,
@@ -70,7 +76,7 @@ nivel Esencial tienen su explicación.
 
 Si se mejora un curso que ya tienes, la app avisa y lo actualiza conservando tu progreso, las
 jugadas que añadiste tú y las que borraste a propósito. La biblioteca tiene buscador (sin
-importar tildes ni mayúsculas) y un botón **▶ Probar la línea principal** para jugar un curso
+importar tildes ni mayúsculas) y un botón **▶ Probar** para jugar la línea principal de un curso
 (primero con flechas y explicaciones, luego sin ayuda) antes de añadirlo.
 
 ### Volver a aprender
@@ -139,7 +145,7 @@ pega un **PGN**, y las compara con tus repertorios:
 - **Objetivo diario**: jugadas que quieres responder cada día; el inicio muestra cuánto llevas.
 - Sonidos, vibración al fallar (Android), animación de acierto/fallo y nombre de la apertura.
 
-### Estadísticas
+### Progreso
 Racha de días, precisión, respuestas por día (30 días), previsión de repasos (14 días),
 progreso por repertorio (nuevas / aprendiendo / consolidadas) y las posiciones que más fallas.
 
@@ -149,7 +155,7 @@ sabes, sonidos, vibración, tema claro u oscuro (o automático), colores del tab
 evaluación y token de Lichess.
 
 ### Datos
-Todo vive en el `localStorage` del navegador. Desde el inicio puedes descargar o restaurar
+Todo vive en el `localStorage` del navegador. En Ajustes puedes descargar o restaurar
 una copia de seguridad en JSON (la copia no incluye tu token de Lichess).
 
 Atajos: `←` `→` `Inicio` `Fin` `F` (girar) en el editor; al entrenar, `H` (pista), `R` (repetir línea),

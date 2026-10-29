@@ -47,7 +47,7 @@ export function renderStats(root) {
 
   root.append(
     h('section', { class: 'page' },
-      h('div', { class: 'page-head' }, h('h1', null, 'Estadísticas')),
+      h('div', { class: 'page-head' }, h('h1', null, 'Tu progreso')),
       h('div', { class: 'tiles' },
         tile('Racha', `${streak()} ${streak() === 1 ? 'día' : 'días'}`, 'Días seguidos entrenando'),
         tile('Respuestas hoy', today.total, today.total ? `${pct(today.ok, today.total)}% de aciertos` : 'Aún no has entrenado hoy'),

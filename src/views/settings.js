@@ -1,6 +1,6 @@
-// Ajustes: entrenamiento, notación, tablero, sincronización y conexión con Lichess.
-import { h, fill, toast } from '../dom.js';
-import { getSettings, updateSettings, DEFAULT_SETTINGS } from '../store.js';
+// Ajustes: entrenamiento, apariencia, sincronización, copias de seguridad y Lichess.
+import { h, fill, toast, download, openDialog } from '../dom.js';
+import { getSettings, updateSettings, DEFAULT_SETTINGS, exportBackup, importBackup, getData } from '../store.js';
 import { BOARD_THEMES, applyBoardTheme, createBoard } from '../board.js';
 import { THEMES, applyTheme } from '../theme.js';
 import { play } from '../sound.js';
@@ -106,10 +106,6 @@ export function renderSettings(root) {
           }),
         ),
         h('p', { class: 'muted small' }, 'En automático, la app se pone clara u oscura según tu sistema.'),
-      ),
-
-      h('div', { class: 'card settings-card' },
-        h('h3', null, 'Notación'),
         h('div', { class: 'field' },
           h('span', null, 'Cómo se escriben las jugadas'),
           segmented(
@@ -123,10 +119,7 @@ export function renderSettings(root) {
         ),
         h('p', { class: 'muted small' },
           'Los PGN que importas o exportas siempre usan la inglesa, que es la que entienden Lichess y Chess.com.'),
-      ),
-
-      h('div', { class: 'card settings-card' },
-        h('h3', null, 'Tablero'),
+        h('div', { class: 'field' }, h('span', null, 'Colores del tablero')),
         h('div', { class: 'theme-swatches' },
           Object.entries(BOARD_THEMES).map(([id, theme]) =>
             h('button', {
@@ -150,6 +143,19 @@ export function renderSettings(root) {
       ),
 
       syncCard(),
+
+      h('div', { class: 'card settings-card' },
+        h('h3', null, 'Copia de seguridad'),
+        h('p', { class: 'small' },
+          'Tus repertorios y tu progreso se guardan en este navegador. Descarga una copia de vez en cuando para no perderlos (no incluye tus tokens).'),
+        h('div', { class: 'actions' },
+          h('button', { class: 'btn', onClick: backup, disabled: !getData().repertoires.length }, 'Descargar copia'),
+          h('label', { class: 'btn' },
+            'Restaurar copia…',
+            h('input', { type: 'file', accept: '.json,application/json', hidden: true, onChange: restore }),
+          ),
+        ),
+      ),
 
       h('div', { class: 'card settings-card' },
         h('h3', null, 'Lichess'),
@@ -187,6 +193,37 @@ export function renderSettings(root) {
       ),
     ),
   );
+
+  function backup() {
+    const date = new Date().toISOString().slice(0, 10);
+    download(`mis-aperturas-${date}.json`, exportBackup(), 'application/json');
+  }
+
+  async function restore(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    e.target.value = '';
+    const close = openDialog('Restaurar copia de seguridad',
+      h('p', null, 'Esto reemplazará todos tus repertorios actuales por los de la copia. ¿Continuar?'),
+      h('div', { class: 'dialog-actions' },
+        h('button', { class: 'btn', onClick: () => close() }, 'Cancelar'),
+        h('button', {
+          class: 'btn primary',
+          onClick: () => {
+            try {
+              importBackup(text);
+              toast('Copia restaurada', 'ok');
+              close();
+              location.hash = '#/';
+            } catch (err) {
+              toast(err.message || 'No se pudo leer el archivo', 'error');
+            }
+          },
+        }, 'Reemplazar'),
+      ),
+    );
+  }
 
   // Sincronización entre dispositivos con un gist privado de GitHub.
   function syncCard() {

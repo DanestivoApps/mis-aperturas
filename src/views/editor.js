@@ -1,6 +1,6 @@
 // Editor: juega en el tablero para añadir jugadas, navega el árbol, comenta e importa PGN.
 import { Chess } from 'chess.js';
-import { h, fill, toast, download, safeFilename, openDialog } from '../dom.js';
+import { h, fill, toast, download, safeFilename, openDialog, dropdown } from '../dom.js';
 import { getRepertoire, getSettings, updateSettings, save } from '../store.js';
 import {
   ROOT_KEY, addMove, deleteMove, importPgn, exportPgn, isUserTurn, gapKeys, pathTo,
@@ -28,10 +28,14 @@ export function renderEditor(root, { id, ruta = '' }) {
   const chess = new Chess();
 
   const boardEl = h('div', { class: 'board' });
+  const head = h('div', { class: 'panel-head' });
   const panel = h('div', { class: 'panel' });
+  // El explorador se abre solo si ya tienes token; recuerda si lo abres o cierras.
+  let explorerOpen = Boolean(settings.lichessToken);
 
   root.append(
-    h('section', { class: 'layout' },
+    h('section', { class: 'layout with-head' },
+      head,
       h('div', { class: 'board-col' },
         boardEl,
         h('div', { class: 'board-controls' },
@@ -141,18 +145,21 @@ export function renderEditor(root, { id, ruta = '' }) {
 
     const linesHere = moves.length ? allLines(rep, { from: key, trim: false, maxLines: 400 }) : [];
 
-    fill(panel,
-      h('div', { class: 'panel-head' },
-        h('a', { href: '#/', class: 'back' }, '← Repertorios'),
-        h('h1', null,
-          h('span', { class: `piece-badge ${rep.color}` }, isWhite ? '♔' : '♚'),
-          rep.name,
-        ),
-        h('p', { class: 'muted small' },
-          `${stats.total} posiciones · ${allLines(rep).length} líneas · ${stats.gaps} sin respuesta`),
-        courseInfo(),
+    fill(head,
+      h('div', { class: 'head-links' },
+        h('a', { href: '#/', class: 'back' }, '← Inicio'),
+        stats.total ? h('a', { href: `#/entrenar/${rep.id}`, class: 'back' }, 'Entrenar') : null,
       ),
-
+      h('h1', null,
+        h('span', { class: `piece-badge ${rep.color}` }, isWhite ? '♔' : '♚'),
+        rep.name,
+      ),
+      h('p', { class: 'muted small' },
+        `${stats.total} posiciones · ${allLines(rep).length} líneas`,
+        stats.gaps ? ` · ${stats.gaps} sin respuesta` : ''),
+      courseInfo(),
+    );
+    fill(panel,
       h('div', { class: 'card' },
         h('div', { class: 'card-row' }, h('h3', null, 'Línea actual'), evalEl),
         openingEl,
@@ -205,9 +212,15 @@ export function renderEditor(root, { id, ruta = '' }) {
           )
         : null,
 
-      h('div', { class: 'card' },
+      h('details', {
+        class: 'card fold',
+        open: explorerOpen,
+        onToggle: (e) => (explorerOpen = e.currentTarget.open),
+      },
+        h('summary', null, h('h3', null, 'Explorador de Lichess'),
+          settings.lichessToken ? null : h('span', { class: 'muted small' }, ' · necesita un token')),
         h('div', { class: 'card-row' },
-          h('h3', null, 'Explorador de Lichess'),
+          h('span', { class: 'muted small' }, 'Partidas de'),
           h('div', { class: 'segmented small-seg' },
             ['masters', 'lichess'].map((db) =>
               h('button', {
@@ -224,7 +237,7 @@ export function renderEditor(root, { id, ruta = '' }) {
       ),
 
       linesHere.length
-        ? h('details', { class: 'card lines-card' },
+        ? h('details', { class: 'card fold lines-card' },
             h('summary', null, h('h3', null, `Líneas desde aquí (${linesHere.length}${linesHere.length >= 400 ? '+' : ''})`)),
             h('ol', { class: 'lines-list' },
               linesHere.slice(0, 150).map((line) =>
@@ -247,31 +260,28 @@ export function renderEditor(root, { id, ruta = '' }) {
         h('a', {
           class: 'btn primary',
           href: `#/entrenar/${rep.id}?modo=libre${cursor ? '&desde=' + path.map((s) => s.move.uci).join(',') : ''}`,
+          title: 'Todas las líneas en orden aleatorio, sin tocar tus fechas de repaso',
         }, cursor ? 'Practicar desde aquí' : 'Practicar todo'),
-        h('button', {
-          class: 'btn',
-          title: 'Las jugadas tuyas que cuelgan de esta posición vuelven a ser nuevas y las aprendes otra vez',
-          onClick: relearn,
-        }, cursor ? 'Volver a aprender desde aquí' : 'Volver a aprender todo'),
-        gaps.length ? h('button', { class: 'btn', onClick: () => jumpToGap(gaps) }, 'Ir a una posición sin respuesta') : null,
-        h('button', {
-          class: 'btn',
-          title: 'Compara tus jugadas con la evaluación de la nube de Lichess',
-          onClick: openReview,
-        }, cursor ? 'Revisar desde aquí con el motor' : 'Revisar con el motor'),
-        h('button', { class: 'btn', onClick: openImport }, 'Importar PGN o estudio'),
-        h('button', {
-          class: 'btn',
-          onClick: () => download(`${safeFilename(rep.name)}.pgn`, exportPgn(rep), 'application/x-chess-pgn'),
-        }, 'Exportar PGN'),
-        h('button', { class: 'btn', onClick: () => copy(fen, 'FEN copiado') }, 'Copiar FEN'),
-        cursor ? h('button', { class: 'btn', onClick: () => copy(pathToText(rep, path), 'Línea copiada') }, 'Copiar línea') : null,
-        h('a', {
-          class: 'btn',
-          href: `https://lichess.org/analysis/standard/${fen.replace(/ /g, '_')}`,
-          target: '_blank',
-          rel: 'noopener',
-        }, 'Analizar en Lichess ↗'),
+        gaps.length ? h('button', { class: 'btn', onClick: () => jumpToGap(gaps) }, 'Ir a un hueco sin respuesta') : null,
+        dropdown('Más ▾', [
+          { label: 'Importar PGN o estudio de Lichess', onClick: openImport },
+          {
+            label: cursor ? 'Revisar desde aquí con el motor' : 'Revisar con el motor',
+            title: 'Compara tus jugadas con la evaluación de la nube de Lichess',
+            onClick: openReview,
+          },
+          { label: 'Analizar en Lichess ↗', href: `https://lichess.org/analysis/standard/${fen.replace(/ /g, '_')}`, external: true },
+          'sep',
+          { label: 'Exportar PGN', onClick: () => download(`${safeFilename(rep.name)}.pgn`, exportPgn(rep), 'application/x-chess-pgn') },
+          { label: 'Copiar FEN', onClick: () => copy(fen, 'FEN copiado') },
+          cursor ? { label: 'Copiar línea', onClick: () => copy(pathToText(rep, path), 'Línea copiada') } : null,
+          'sep',
+          {
+            label: cursor ? 'Volver a aprender desde aquí' : 'Volver a aprender todo',
+            title: 'Las jugadas tuyas que cuelgan de esta posición vuelven a ser nuevas y las aprendes otra vez',
+            onClick: relearn,
+          },
+        ], { label: 'Más opciones', className: 'menu-up' }),
       ),
     );
 

@@ -1,99 +1,75 @@
-// Inicio: lista de repertorios, crear nuevos, copias de seguridad y acceso a la biblioteca.
-import { h, toast, download, safeFilename, openDialog } from '../dom.js';
-import { getData, addRepertoire, removeRepertoire, save, exportBackup, importBackup, streak, todayCount } from '../store.js';
-import { newRepertoire, importPgn, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
+// Inicio: lo que toca hoy, tus repertorios y acceso a la biblioteca.
+import { h, toast, download, safeFilename, openDialog, dropdown } from '../dom.js';
+import { getData, addRepertoire, removeRepertoire, save, streak, todayCount } from '../store.js';
+import { newRepertoire, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
 import { describeDue } from '../srs.js';
 import { LEVELS, COURSES } from '../library.js';
 import { outdatedReps, updateCourse, updateMessage, restoreCourse, repSnapshot, restoreSnapshot } from '../courses.js';
 
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
 export function renderHome(root) {
-  const data = getData();
-  const reps = data.repertoires;
-
-  const totals = reps.reduce(
-    (acc, rep) => {
-      const s = repStats(rep);
-      acc.due += s.due;
-      acc.fresh += s.fresh;
-      return acc;
-    },
-    { due: 0, fresh: 0 },
-  );
-
-  const summary = !reps.length
-    ? 'Añade un curso de la biblioteca o crea tu propio repertorio desde cero.'
-    : totals.due
-      ? `Hoy tienes ${totals.due} ${totals.due === 1 ? 'jugada' : 'jugadas'} para repasar.`
-      : totals.fresh
-        ? `Estás al día. Tienes ${totals.fresh} jugadas nuevas por aprender.`
-        : 'Estás al día con tus repasos. ¡Buen trabajo!';
-
-  const outdated = outdatedReps();
-  const days = streak();
-  const firstPending = reps.find((rep) => pendingCount(rep) > 0);
-  const allPending = reps.reduce((n, rep) => n + pendingCount(rep), 0);
-
-  root.append(
-    h('section', { class: 'page' },
-      h('div', { class: 'page-head with-action' },
-        h('div', null,
-          h('h1', null, 'Tus repertorios'),
-          h('p', { class: 'muted' }, summary,
-            days ? h('span', { class: 'streak', title: 'Días seguidos entrenando' }, ` · 🔥 ${days} ${days === 1 ? 'día' : 'días'} seguidos`) : null),
-          reps.length ? goalMeter(data.settings.dailyGoal) : null,
-        ),
-        firstPending && reps.length > 1
-          ? h('a', { class: 'btn primary big', href: `#/entrenar/${firstPending.id}?todo=1` }, `Repasar todo (${allPending})`)
-          : null,
-      ),
-      outdated.length
-        ? h('div', { class: 'update-banner' },
-            h('span', null,
-              h('strong', null, `Hay mejoras en ${outdated.length === 1 ? '1 curso' : `${outdated.length} cursos`} de la biblioteca que tienes`),
-              h('span', { class: 'muted small' }, ` (${outdated.map((r) => r.name).join(', ')}). Se conserva tu progreso y las jugadas que añadiste tú.`),
-            ),
-            h('button', {
-              class: 'btn primary',
-              onClick: () => {
-                let added = 0;
-                let removed = 0;
-                for (const rep of outdated) {
-                  const r = updateCourse(rep);
-                  added += r.added;
-                  removed += r.removed;
-                }
-                toast(updateMessage({ added, removed }).replace('Curso actualizado', outdated.length > 1 ? 'Cursos actualizados' : 'Curso actualizado'), 'ok');
-                rerender();
-              },
-            }, 'Actualizar ahora'),
-          )
-        : null,
-      reps.length
-        ? null
-        : h('a', { class: 'library-cta', href: '#/biblioteca' },
-            h('span', { class: 'library-cta-icon' }, '📚'),
-            h('span', null,
-              h('strong', null, 'Empieza con la biblioteca de aperturas'),
-              h('span', { class: 'muted' }, `${COURSES.length} cursos con explicaciones y variantes del rival: Italiana, Española, Londres, Inglesa, Gambito de Dama, Caro-Kann, Francesa, Najdorf, Nimzoindia, Holandesa…`),
-            ),
-            h('span', { class: 'btn primary' }, 'Ver cursos →'),
-          ),
-      h('div', { class: 'rep-grid' },
-        reps.map(repCard),
-        newRepForm(),
-      ),
-      h('div', { class: 'tools' },
-        h('a', { class: 'btn ghost', href: '#/biblioteca' }, '📚 Biblioteca de aperturas'),
-        h('button', { class: 'btn ghost', onClick: backup, disabled: !reps.length }, 'Descargar copia de seguridad'),
-        h('label', { class: 'btn ghost' },
-          'Restaurar copia',
-          h('input', { type: 'file', accept: '.json,application/json', hidden: true, onChange: restore }),
-        ),
-      ),
-      h('p', { class: 'muted small' },
-        'Todo se guarda en este navegador. Descarga una copia de seguridad de vez en cuando para no perder tus repertorios.',
+  const reps = getData().repertoires;
+  const page = h('section', { class: 'page' });
+  root.append(page);
+  if (!reps.length) {
+    page.append(welcome());
+    return;
+  }
+  page.append(
+    today(reps),
+    updateBanner() ?? '',
+    h('div', { class: 'section-head' },
+      h('h2', null, 'Tus repertorios'),
+      h('div', { class: 'section-actions' },
+        h('button', { class: 'btn', onClick: newRepDialog }, '+ Nuevo'),
+        h('a', { class: 'btn', href: '#/biblioteca' }, 'Biblioteca'),
       ),
     ),
+    h('div', { class: 'rep-grid' }, reps.map(repCard)),
+  );
+}
+
+function rerender() {
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+}
+
+// Jugadas que tocan hoy en un repertorio: las vencidas y las nuevas que caben en una sesión.
+function pendingCount(rep) {
+  const s = repStats(rep);
+  return s.due + Math.min(s.fresh, getData().settings.newPerSession);
+}
+
+const nextDueOf = (rep) => Object.values(rep.cards).reduce((min, c) => Math.min(min, c.due), Infinity);
+
+// ---------- Hoy ----------
+function today(reps) {
+  const settings = getData().settings;
+  const pendingReps = reps.filter((rep) => pendingCount(rep) > 0);
+  const due = reps.reduce((n, rep) => n + repStats(rep).due, 0);
+  const fresh = pendingReps.reduce((n, rep) => n + Math.min(repStats(rep).fresh, settings.newPerSession), 0);
+  const pending = due + fresh;
+  const days = streak();
+  const nextDue = Math.min(...reps.map(nextDueOf));
+
+  const detail = pending
+    ? [due ? `${due} para repasar` : null, fresh ? plural(fresh, 'nueva por aprender', 'nuevas por aprender') : null]
+        .filter(Boolean).join(' · ')
+    : Number.isFinite(nextDue) ? `Próximo repaso: ${describeDue(nextDue)}.` : 'Añade jugadas a tus repertorios para empezar.';
+
+  return h('div', { class: `today ${pending ? '' : 'done'}` },
+    h('div', { class: 'today-main' },
+      h('p', { class: 'today-label' }, 'Hoy'),
+      h('h1', null, pending ? plural(pending, 'jugada pendiente', 'jugadas pendientes') : 'Estás al día ✓'),
+      h('p', { class: 'muted' }, detail),
+      h('div', { class: 'today-meta' },
+        days ? h('span', { class: 'streak', title: 'Días seguidos entrenando' }, `🔥 ${plural(days, 'día seguido', 'días seguidos')}`) : null,
+        goalMeter(settings.dailyGoal),
+      ),
+    ),
+    pending
+      ? h('a', { class: 'btn primary big', href: `#/entrenar/${pendingReps[0].id}?todo=1` }, 'Empezar a entrenar')
+      : h('a', { class: 'btn big', href: '#/biblioteca' }, 'Aprender otra apertura'),
   );
 }
 
@@ -104,135 +80,161 @@ function goalMeter(goal) {
   const done = count >= goal;
   const pct = Math.min(100, Math.round((count / goal) * 100));
   return h('div', { class: `goal ${done ? 'done' : ''}`, title: 'Jugadas respondidas hoy. Cambia el objetivo en Ajustes.' },
-    h('span', { 'aria-hidden': 'true' }, '🎯'),
-    h('div', { class: 'progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(goal), 'aria-valuenow': String(Math.min(count, goal)), 'aria-label': 'Objetivo de hoy' },
-      h('span', { style: `width:${pct}%` })),
-    h('span', { class: 'goal-text' }, done ? `Objetivo de hoy cumplido (${count}/${goal}) ✓` : `Hoy: ${count}/${goal} jugadas`),
+    h('div', {
+      class: 'progress', role: 'progressbar', 'aria-label': 'Objetivo de hoy',
+      'aria-valuemin': '0', 'aria-valuemax': String(goal), 'aria-valuenow': String(Math.min(count, goal)),
+    }, h('span', { style: `width:${pct}%` })),
+    h('span', { class: 'goal-text' }, done ? `Objetivo cumplido ✓ (${count}/${goal})` : `Objetivo: ${count}/${goal}`),
   );
 }
 
-function rerender() {
-  window.dispatchEvent(new HashChangeEvent('hashchange'));
+function updateBanner() {
+  const outdated = outdatedReps();
+  if (!outdated.length) return null;
+  return h('div', { class: 'update-banner' },
+    h('span', null,
+      h('strong', null, `Hay mejoras en ${outdated.length === 1 ? '1 curso' : `${outdated.length} cursos`} que tienes`),
+      h('span', { class: 'muted small' }, ` (${outdated.map((r) => r.name).join(', ')}). Se conserva tu progreso y las jugadas que añadiste tú.`),
+    ),
+    h('button', {
+      class: 'btn primary',
+      onClick: () => {
+        let added = 0;
+        let removed = 0;
+        for (const rep of outdated) {
+          const r = updateCourse(rep);
+          added += r.added;
+          removed += r.removed;
+        }
+        toast(updateMessage({ added, removed }).replace('Curso actualizado', outdated.length > 1 ? 'Cursos actualizados' : 'Curso actualizado'), 'ok');
+        rerender();
+      },
+    }, 'Actualizar'),
+  );
 }
 
-function pendingCount(rep) {
-  const s = repStats(rep);
-  return s.due + Math.min(s.fresh, getData().settings.newPerSession);
-}
-
+// ---------- Repertorios ----------
 function repCard(rep) {
   const s = repStats(rep);
+  const settings = getData().settings;
   const pending = pendingCount(rep);
-  const weak = weakKeys(rep).length;
   const pct = s.total ? Math.round((s.learned / s.total) * 100) : 0;
-  const nextDue = Object.values(rep.cards).reduce((min, c) => Math.min(min, c.due), Infinity);
+  const nextDue = nextDueOf(rep);
   const isWhite = rep.color === 'white';
+  const freshToday = Math.min(s.fresh, settings.newPerSession);
 
   return h('article', { class: 'rep-card' },
     h('div', { class: 'rep-card-head' },
       h('span', { class: `piece-badge ${rep.color}`, title: isWhite ? 'Blancas' : 'Negras' }, isWhite ? '♔' : '♚'),
       h('div', { class: 'rep-title' },
-        h('h2', null, rep.name),
-        h('span', { class: 'muted small' }, `${isWhite ? 'Blancas' : 'Negras'} · ${s.total} posiciones${rep.source ? ` · curso ${LEVELS[rep.source.level]?.name.toLowerCase() ?? ''}` : ''}`),
+        h('h3', null, rep.name),
+        h('span', { class: 'muted small' },
+          isWhite ? 'Blancas' : 'Negras',
+          rep.source ? ` · ${LEVELS[rep.source.level]?.name ?? ''}` : ''),
       ),
-      menu(rep),
+      repMenu(rep, s),
+    ),
+    h('div', { class: 'rep-progress' },
+      h('div', { class: 'progress', title: `${pct}% aprendido` }, h('span', { style: `width:${pct}%` })),
+      h('span', { class: 'muted small' }, s.total ? `${s.learned} de ${s.total} aprendidas` : 'Sin jugadas todavía'),
     ),
     h('div', { class: 'chips' },
-      h('span', { class: `chip ${s.due ? 'due' : ''}` }, `${s.due} para repasar`),
-      h('span', { class: 'chip' }, `${s.fresh} nuevas`),
-      h('span', { class: 'chip' }, `${s.learned} aprendidas`),
+      s.due ? h('span', { class: 'chip due' }, `${s.due} para repasar`) : null,
+      freshToday ? h('span', { class: 'chip' }, plural(freshToday, 'nueva', 'nuevas')) : null,
       s.gaps ? h('span', { class: 'chip warn', title: 'Posiciones donde te toca mover y no tienes respuesta' }, `${s.gaps} sin respuesta`) : null,
+      !pending && s.total
+        ? h('span', { class: 'chip ok' }, `Al día${Number.isFinite(nextDue) ? ` · ${describeDue(nextDue)}` : ''}`)
+        : null,
     ),
-    h('div', { class: 'progress', title: `${pct}% aprendido` }, h('span', { style: `width:${pct}%` })),
     h('div', { class: 'rep-actions' },
       pending
         ? h('a', { class: 'btn primary', href: `#/entrenar/${rep.id}` }, `Entrenar (${pending})`)
-        : h('span', { class: 'btn done' },
-            s.total ? `Al día ✓${Number.isFinite(nextDue) ? ' · ' + describeDue(nextDue) : ''}` : 'Vacío'),
-      h('a', { class: 'btn', href: `#/editar/${rep.id}` }, 'Editar'),
-      s.total ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre` }, 'Práctica libre') : null,
-      weak ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=errores`, title: 'Posiciones que sueles fallar' }, `Errores (${weak})`) : null,
-      s.total
-        ? h('a', { class: 'btn', href: `#/contrarreloj/${rep.id}`, title: 'Posiciones sueltas de este repertorio contra el reloj' }, '⏱ Contrarreloj')
-        : null,
+        : s.total
+          ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre`, title: 'Todas las líneas, sin tocar tus fechas de repaso' }, 'Practicar')
+          : null,
+      h('a', { class: 'btn ghost', href: `#/editar/${rep.id}` }, s.total ? 'Editar' : 'Añadir jugadas'),
     ),
   );
 }
 
-function menu(rep) {
-  const details = h('details', { class: 'menu' },
-    h('summary', { class: 'icon-btn', 'aria-label': 'Más opciones' }, '⋯'),
-    h('div', { class: 'menu-list' },
-      h('button', {
-        title: 'Todas las jugadas vuelven a ser nuevas y las aprendes otra vez con pistas',
-        onClick: () => {
-          if (!confirm(`¿Volver a aprender "${rep.name}" desde cero? Todas sus jugadas volverán a ser nuevas.`)) return;
-          const snap = repSnapshot(rep);
-          const count = resetProgress(rep);
-          save(rep);
-          toast(`Progreso reiniciado: ${count} jugadas vuelven a ser nuevas`, 'ok', {
-            label: 'Deshacer',
-            onClick: () => {
-              restoreSnapshot(rep, snap);
-              rerender();
-            },
-          });
-          rerender();
-        },
-      }, 'Volver a aprender desde cero'),
-      rep.source
-        ? h('button', {
-            title: 'Quita tus cambios y recupera el curso tal cual está en la biblioteca (tu progreso se conserva)',
-            onClick: () => {
-              if (!confirm(`¿Restaurar "${rep.name}" como en la biblioteca? Se quitan las jugadas que añadiste tú y vuelven las que borraste.`)) return;
-              const snap = repSnapshot(rep);
-              restoreCourse(rep);
-              toast('Curso restaurado como en la biblioteca', 'ok', {
-                label: 'Deshacer',
-                onClick: () => {
-                  restoreSnapshot(rep, snap);
-                  rerender();
-                },
-              });
-              rerender();
-            },
-          }, 'Restaurar curso original')
-        : null,
-      h('button', {
-        onClick: () => {
-          const name = prompt('Nuevo nombre del repertorio:', rep.name);
-          if (name?.trim()) {
-            rep.name = name.trim();
-            save(rep);
+function repMenu(rep, s) {
+  const weak = weakKeys(rep).length;
+  return dropdown('⋯', [
+    s.total ? { label: 'Práctica libre', href: `#/entrenar/${rep.id}?modo=libre`, title: 'Todas las líneas en orden aleatorio, sin tocar tus fechas de repaso' } : null,
+    weak ? { label: `Repasar mis errores (${weak})`, href: `#/entrenar/${rep.id}?modo=errores` } : null,
+    s.total ? { label: '⏱ Contrarreloj', href: `#/contrarreloj/${rep.id}` } : null,
+    s.total ? 'sep' : null,
+    { label: 'Renombrar', onClick: () => renameRep(rep) },
+    {
+      label: 'Duplicar',
+      title: 'Copia las jugadas y comentarios, sin el progreso de repaso',
+      onClick: () => {
+        const copy = newRepertoire(`${rep.name} (copia)`, rep.color);
+        copy.positions = structuredClone(rep.positions);
+        addRepertoire(copy);
+        toast('Repertorio duplicado (sin progreso)', 'ok');
+        rerender();
+      },
+    },
+    { label: 'Exportar PGN', onClick: () => download(`${safeFilename(rep.name)}.pgn`, exportPgn(rep), 'application/x-chess-pgn') },
+    'sep',
+    {
+      label: 'Volver a aprender desde cero',
+      title: 'Todas las jugadas vuelven a ser nuevas y las aprendes otra vez con pistas',
+      onClick: () => {
+        if (!confirm(`¿Volver a aprender "${rep.name}" desde cero? Todas sus jugadas volverán a ser nuevas.`)) return;
+        const snap = repSnapshot(rep);
+        const count = resetProgress(rep);
+        save(rep);
+        toast(`Progreso reiniciado: ${count} jugadas vuelven a ser nuevas`, 'ok', undo(rep, snap));
+        rerender();
+      },
+    },
+    rep.source
+      ? {
+          label: 'Restaurar curso original',
+          title: 'Quita tus cambios y recupera el curso tal cual está en la biblioteca (tu progreso se conserva)',
+          onClick: () => {
+            if (!confirm(`¿Restaurar "${rep.name}" como en la biblioteca? Se quitan las jugadas que añadiste tú y vuelven las que borraste.`)) return;
+            const snap = repSnapshot(rep);
+            restoreCourse(rep);
+            toast('Curso restaurado como en la biblioteca', 'ok', undo(rep, snap));
             rerender();
-          }
-        },
-      }, 'Renombrar'),
-      h('button', { onClick: () => download(`${safeFilename(rep.name)}.pgn`, exportPgn(rep), 'application/x-chess-pgn') }, 'Exportar PGN'),
-      h('button', {
-        title: 'Copia las jugadas y comentarios, sin el progreso de repaso',
-        onClick: () => {
-          const copy = newRepertoire(`${rep.name} (copia)`, rep.color);
-          copy.positions = structuredClone(rep.positions);
-          addRepertoire(copy);
-          toast('Repertorio duplicado (sin progreso)', 'ok');
-          rerender();
-        },
-      }, 'Duplicar'),
-      h('button', {
-        onClick: () => {
-          if (!confirm(`¿Seguro que quieres borrar "${rep.name}"? No se puede deshacer.`)) return;
-          removeRepertoire(rep.id);
-          toast('Repertorio borrado');
-          rerender();
-        },
-      }, 'Borrar repertorio'),
-    ),
-  );
-  return details;
+          },
+        }
+      : null,
+    'sep',
+    {
+      label: 'Borrar repertorio',
+      danger: true,
+      onClick: () => {
+        if (!confirm(`¿Seguro que quieres borrar "${rep.name}"? No se puede deshacer.`)) return;
+        removeRepertoire(rep.id);
+        toast('Repertorio borrado');
+        rerender();
+      },
+    },
+  ], { label: `Más opciones de ${rep.name}` });
 }
 
-function newRepForm() {
+const undo = (rep, snap) => ({
+  label: 'Deshacer',
+  onClick: () => {
+    restoreSnapshot(rep, snap);
+    rerender();
+  },
+});
+
+function renameRep(rep) {
+  const name = prompt('Nuevo nombre del repertorio:', rep.name);
+  if (!name?.trim()) return;
+  rep.name = name.trim();
+  save(rep);
+  rerender();
+}
+
+// ---------- Nuevo repertorio ----------
+function newRepDialog() {
   let color = 'white';
   const nameInput = h('input', { type: 'text', placeholder: 'Ej.: Siciliana Najdorf', maxlength: '60', required: true });
   const colorBtns = ['white', 'black'].map((c) =>
@@ -245,53 +247,56 @@ function newRepForm() {
       },
     }, c === 'white' ? '♔ Blancas' : '♚ Negras'),
   );
-
-  return h('form', {
-    class: 'rep-card new-rep',
-    onSubmit: (e) => {
-      e.preventDefault();
-      const name = nameInput.value.trim();
-      if (!name) return;
-      const rep = newRepertoire(name, color);
-      addRepertoire(rep);
-      location.hash = `#/editar/${rep.id}`;
+  const close = openDialog('Nuevo repertorio',
+    h('form', {
+      onSubmit: (e) => {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        if (!name) return;
+        const rep = newRepertoire(name, color);
+        addRepertoire(rep);
+        close();
+        location.hash = `#/editar/${rep.id}`;
+      },
     },
-  },
-    h('h2', null, 'Nuevo repertorio'),
-    h('label', { class: 'field' }, h('span', null, 'Nombre'), nameInput),
-    h('div', { class: 'field' }, h('span', null, 'Juegas con'), h('div', { class: 'segmented' }, colorBtns)),
-    h('button', { class: 'btn primary', type: 'submit' }, 'Crear y empezar a añadir jugadas'),
-  );
-}
-
-
-function backup() {
-  const date = new Date().toISOString().slice(0, 10);
-  download(`mis-aperturas-${date}.json`, exportBackup(), 'application/json');
-}
-
-async function restore(e) {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const text = await file.text();
-  const close = openDialog('Restaurar copia de seguridad',
-    h('p', null, 'Esto reemplazará todos tus repertorios actuales por los de la copia. ¿Continuar?'),
-    h('div', { class: 'dialog-actions' },
-      h('button', { class: 'btn', onClick: () => close() }, 'Cancelar'),
-      h('button', {
-        class: 'btn primary',
-        onClick: () => {
-          try {
-            importBackup(text);
-            toast('Copia restaurada', 'ok');
-            close();
-            rerender();
-          } catch (err) {
-            toast(err.message || 'No se pudo leer el archivo', 'error');
-          }
-        },
-      }, 'Reemplazar'),
+      h('label', { class: 'field' }, h('span', null, 'Nombre'), nameInput),
+      h('div', { class: 'field' }, h('span', null, 'Juegas con'), h('div', { class: 'segmented' }, colorBtns)),
+      h('p', { class: 'muted small' },
+        'Lo crearás jugando en el tablero o importando un PGN. ¿Prefieres un curso ya hecho? ',
+        h('a', { href: '#/biblioteca', onClick: () => close() }, 'Mira la biblioteca'), '.'),
+      h('div', { class: 'dialog-actions' },
+        h('button', { type: 'button', class: 'btn', onClick: () => close() }, 'Cancelar'),
+        h('button', { type: 'submit', class: 'btn primary' }, 'Crear'),
+      ),
     ),
   );
-  e.target.value = '';
+  nameInput.focus();
+}
+
+// ---------- Primera vez ----------
+function welcome() {
+  return h('div', { class: 'welcome' },
+    h('h1', null, 'Aprende tus aperturas'),
+    h('p', { class: 'muted' },
+      'El rival juega las jugadas de tu repertorio y tú respondes. La repetición espaciada te pregunta cada jugada justo antes de que la olvides.'),
+    h('a', { class: 'welcome-option primary', href: '#/biblioteca' },
+      h('span', { class: 'welcome-icon' }, '📚'),
+      h('span', null,
+        h('strong', null, 'Elige un curso de la biblioteca'),
+        h('span', { class: 'muted small' },
+          `${COURSES.length} cursos con la idea de cada jugada explicada: Italiana, Española, Londres, Caro-Kann, Najdorf, Nimzoindia…`),
+      ),
+      h('span', { class: 'welcome-arrow' }, '→'),
+    ),
+    h('button', { class: 'welcome-option', type: 'button', onClick: newRepDialog },
+      h('span', { class: 'welcome-icon' }, '✏️'),
+      h('span', null,
+        h('strong', null, 'Crea tu propio repertorio'),
+        h('span', { class: 'muted small' }, 'Juega las jugadas en el tablero o importa un PGN.'),
+      ),
+      h('span', { class: 'welcome-arrow' }, '→'),
+    ),
+    h('p', { class: 'muted small' }, '¿Tienes una copia de seguridad o usas otro dispositivo? Ve a ',
+      h('a', { href: '#/ajustes' }, 'Ajustes'), '.'),
+  );
 }

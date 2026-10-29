@@ -16,7 +16,7 @@
   --bad-soft: #f8e1de;
   --ok: #2f7a32;
   --ok-soft: #e0f1df;
-  --radius: 10px;
+  --radius: 12px;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.05);
   color-scheme: light;
 }
@@ -115,12 +115,15 @@ h3 {
   font-size: 0.85rem;
 }
 
-/* ---------- Barra superior ---------- */
+/* ---------- Barra superior y navegación ---------- */
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 12px 16px;
+  align-items: center;
+  gap: 8px 28px;
+  padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -129,40 +132,40 @@ h3 {
   font-weight: 700;
   font-size: 1.15rem;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .brand-icon {
   color: var(--accent);
 }
 
-.topbar {
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-}
-
 .nav {
   display: flex;
   gap: 4px;
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.nav::-webkit-scrollbar {
-  display: none;
 }
 
 .nav a {
-  white-space: nowrap;
-}
-
-.nav a {
-  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
   border-radius: 8px;
   color: var(--muted);
   text-decoration: none;
-  font-size: 0.92rem;
+  font-size: 0.93rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.nav svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .nav a:hover {
@@ -171,9 +174,60 @@ h3 {
 }
 
 .nav a.on {
-  color: var(--text);
-  background: var(--surface-2);
+  color: var(--accent);
+  background: var(--accent-soft);
   font-weight: 600;
+}
+
+/* En el móvil, la navegación es una barra fija abajo, como en las apps. */
+@media (max-width: 700px) {
+  .topbar {
+    padding: 10px 16px;
+  }
+
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    justify-content: space-around;
+    gap: 0;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .nav a {
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 2px;
+    font-size: 0.7rem;
+  }
+
+  .nav a.on {
+    background: transparent;
+  }
+
+  .nav svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  body {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom));
+  }
+
+  /* Al entrenar o editar, el tablero ocupa la pantalla: la cabecera de la vista lleva el «← Inicio». */
+  body.focus .topbar,
+  body.focus .nav {
+    display: none;
+  }
+
+  body.focus {
+    padding-bottom: 0;
+  }
 }
 
 /* ---------- Botones ---------- */
@@ -942,28 +996,6 @@ textarea {
 .wdl .b {
   background: #333;
   color: #fff;
-}
-
-.lines-card summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.lines-card summary::-webkit-details-marker {
-  display: none;
-}
-
-.lines-card summary h3 {
-  display: inline;
-}
-
-.lines-card summary::after {
-  content: ' ▾';
-  color: var(--muted);
-}
-
-.lines-card[open] summary::after {
-  content: ' ▴';
 }
 
 .lines-list {
@@ -1762,4 +1794,396 @@ kbd {
 .line-text .mv {
   margin: 2px 4px 2px 0;
   cursor: pointer;
+}
+
+/* =====================================================================
+   Rediseño: inicio, menús, cabeceras de vista y ajustes generales
+   ===================================================================== */
+.btn {
+  min-height: 40px;
+  border-radius: 10px;
+}
+
+.page {
+  padding-top: 28px;
+}
+
+h1 {
+  font-size: 1.55rem;
+}
+
+/* ---------- Inicio: hoy ---------- */
+.today {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+  padding: 24px 26px;
+  margin-bottom: 30px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--surface) 70%);
+  box-shadow: var(--shadow);
+}
+
+.today.done {
+  background: var(--surface);
+}
+
+.today-main {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+.today-main > p {
+  margin: 0;
+}
+
+.today-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.today h1 {
+  margin: 2px 0 4px;
+  font-size: 1.8rem;
+}
+
+.today-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+  margin-top: 14px;
+  font-size: 0.9rem;
+}
+
+.today .goal {
+  flex: 1 1 220px;
+  max-width: 340px;
+  margin-top: 0;
+}
+
+.today .btn.big {
+  padding: 14px 28px;
+  font-size: 1.05rem;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.section-head h2 {
+  font-size: 1.2rem;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- Tarjetas de repertorio ---------- */
+.rep-card {
+  gap: 14px;
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.rep-title h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.rep-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rep-progress .progress {
+  flex: 1;
+}
+
+.rep-progress .small {
+  white-space: nowrap;
+}
+
+.rep-card .chips:empty {
+  display: none;
+}
+
+.rep-actions .btn.primary,
+.rep-actions .btn:first-child {
+  flex: 1;
+}
+
+/* ---------- Menús desplegables ---------- */
+.menu > summary {
+  list-style: none;
+}
+
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+
+.menu-btn:hover,
+.menu[open] > .menu-btn {
+  background: var(--surface-2);
+}
+
+.rep-card-head .menu-btn {
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: 1.25rem;
+}
+
+.menu-list {
+  top: calc(100% + 4px);
+  min-width: 230px;
+  border-radius: 12px;
+}
+
+.menu-up .menu-list {
+  top: auto;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: auto;
+}
+
+.menu-list a,
+.menu-list button {
+  display: block;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menu-list a:hover,
+.menu-list button:hover {
+  background: var(--surface-2);
+}
+
+.menu-list .danger {
+  color: var(--bad);
+}
+
+.menu-sep {
+  margin: 4px 2px;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- Primera vez ---------- */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 640px;
+  margin: 12px auto 0;
+}
+
+.welcome h1 {
+  font-size: 2rem;
+}
+
+.welcome > p {
+  margin: 0;
+}
+
+.welcome-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.welcome-option:hover {
+  border-color: var(--accent);
+}
+
+.welcome-option.primary {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.welcome-option strong {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 2px;
+}
+
+.welcome-icon {
+  font-size: 1.8rem;
+}
+
+.welcome-arrow {
+  margin-left: auto;
+  font-size: 1.3rem;
+  color: var(--muted);
+}
+
+/* ---------- Vistas con tablero: cabecera arriba ---------- */
+.layout.with-head {
+  grid-template-areas: 'board head' 'board side';
+  grid-template-rows: auto 1fr;
+  row-gap: 16px;
+}
+
+.layout.with-head > .panel-head {
+  grid-area: head;
+}
+
+.layout.with-head > .board-col {
+  grid-area: board;
+}
+
+.layout.with-head > .panel {
+  grid-area: side;
+}
+
+.head-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-head h1 {
+  font-size: 1.4rem;
+}
+
+.panel-head .chips {
+  margin-top: 10px;
+}
+
+@media (max-width: 860px) {
+  .layout.with-head {
+    grid-template-areas: 'head' 'board' 'side';
+    grid-template-rows: none;
+    row-gap: 12px;
+  }
+
+  .panel-head h1 {
+    font-size: 1.15rem;
+  }
+
+  .panel-head h1 .piece-badge {
+    width: 26px;
+    height: 26px;
+    font-size: 1.05rem;
+    margin-right: 8px;
+  }
+
+  .panel-head p {
+    margin-top: 2px;
+  }
+
+  .panel-head .back {
+    margin-bottom: 2px;
+  }
+}
+
+/* Plegables (explorador del editor) */
+.card.fold > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.card.fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.card.fold > summary h3 {
+  display: inline;
+}
+
+.card.fold > summary::after {
+  content: '▸';
+  float: right;
+  color: var(--muted);
+}
+
+.card.fold[open] > summary {
+  margin-bottom: 10px;
+}
+
+.card.fold[open] > summary::after {
+  content: '▾';
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 600px) {
+  .page {
+    padding-top: 18px;
+  }
+
+  .today {
+    padding: 18px;
+  }
+
+  .today h1 {
+    font-size: 1.45rem;
+  }
+
+  .today .btn.big {
+    width: 100%;
+  }
+
+  .section-actions .btn {
+    padding: 8px 12px;
+  }
+
+  .welcome h1 {
+    font-size: 1.6rem;
+  }
+
+  #toast {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  body.focus #toast {
+    bottom: 24px;
+  }
 }

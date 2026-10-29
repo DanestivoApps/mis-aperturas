@@ -54,6 +54,8 @@ function route() {
       break;
     }
   }
+  // Pantallas de tablero (entrenar, editar...): en el móvil se ocultan las barras para dar sitio.
+  document.body.classList.toggle('focus', /^#\/(entrenar|editar|probar|contrarreloj)\//.test(path));
   // Marca la sección activa en la barra superior.
   const section = path.startsWith('#/probar')
     ? 'biblioteca'
@@ -62,11 +64,15 @@ function route() {
   window.scrollTo(0, 0);
 }
 
-// Cierra los menús desplegables al hacer clic fuera de ellos.
+// Cierra los menús desplegables al hacer clic fuera de ellos o con Escape.
 document.addEventListener('click', (e) => {
   for (const menu of document.querySelectorAll('details.menu[open]')) {
     if (!menu.contains(e.target)) menu.open = false;
   }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  for (const menu of document.querySelectorAll('details.menu[open]')) menu.open = false;
 });
 
 applyTheme();

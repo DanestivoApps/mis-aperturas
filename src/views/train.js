@@ -115,21 +115,22 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const nextBtn = h('button', { class: 'btn primary', hidden: true, onClick: nextLine, title: 'Atajo: Enter' }, 'Siguiente línea →');
   const skipBtn = h('button', { class: 'btn', hidden: preview, onClick: skipLine, title: 'Atajo: S' }, 'Saltar línea');
   const repeatBtn = h('button', { class: 'btn', onClick: repeatLine, title: 'Vuelve a jugar esta línea desde el principio (atajo: R)' }, '↺ Repetir línea');
-  const baseActions = [
-    nextBtn, repeatBtn, hintBtn, skipBtn,
-    preview ? null : h('a', { class: 'btn ghost', href: `#/editar/${rep.id}` }, 'Editar repertorio'),
-  ];
+  const baseActions = [nextBtn, hintBtn, repeatBtn, skipBtn];
   const actions = h('div', { class: 'actions' }, baseActions);
-  const panel = h('div', { class: 'panel' },
-    h('div', { class: 'panel-head' },
+  // Cabecera: arriba del todo en el móvil, encima del panel en el ordenador.
+  const head = h('div', { class: 'panel-head' },
+    h('div', { class: 'head-links' },
       preview
         ? h('a', { href: '#/biblioteca', class: 'back' }, '← Biblioteca')
-        : h('a', { href: '#/', class: 'back' }, '← Repertorios'),
-      h('h1', null, h('span', { class: `piece-badge ${rep.color}` }, rep.color === 'white' ? '♔' : '♚'), rep.name),
-      levelName ? h('span', { class: 'chip due level-chip' }, `Nivel ${levelName}`) : null,
-      modeText,
+        : h('a', { href: '#/', class: 'back' }, '← Inicio'),
+      preview ? null : h('a', { href: `#/editar/${rep.id}`, class: 'back' }, 'Editar repertorio'),
     ),
+    h('h1', null, h('span', { class: `piece-badge ${rep.color}` }, rep.color === 'white' ? '♔' : '♚'), rep.name),
+    levelName ? h('span', { class: 'chip due level-chip' }, `Nivel ${levelName}`) : null,
+    modeText,
     counters,
+  );
+  const panel = h('div', { class: 'panel' },
     feedback,
     comment,
     h('div', { class: 'card' }, h('h3', null, 'Línea'), openingEl, moveText),
@@ -150,7 +151,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const navNote = h('p', { class: 'muted small nav-note', hidden: true },
     'Estás viendo una jugada anterior. Pulsa ⏭ para volver a la posición actual.');
 
-  root.append(h('section', { class: 'layout' },
+  root.append(h('section', { class: 'layout with-head' },
+    head,
     h('div', { class: 'board-col' },
       boardEl,
       h('div', { class: 'board-controls' },

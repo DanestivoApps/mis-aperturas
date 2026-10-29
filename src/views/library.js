@@ -8,8 +8,8 @@ import {
 
 const FILTERS = [
   { id: 'all', label: 'Todos' },
-  { id: 'white', label: '♔ Con blancas' },
-  { id: 'black', label: '♚ Con negras' },
+  { id: 'white', label: '♔ Blancas' },
+  { id: 'black', label: '♚ Negras' },
 ];
 
 let filter = 'all';
@@ -42,10 +42,9 @@ export function renderLibrary(root) {
   root.append(
     h('section', { class: 'page' },
       h('div', { class: 'page-head' },
-        h('h1', null, 'Biblioteca de aperturas'),
+        h('h1', null, 'Biblioteca'),
         h('p', { class: 'muted' },
-          'Cursos listos para entrenar, con la idea de cada jugada explicada y las respuestas más habituales del rival. ',
-          'Elige hasta dónde quieres llegar: puedes empezar por lo esencial y ampliar el curso cuando quieras.'),
+          'Cursos con la idea de cada jugada explicada y las respuestas habituales del rival. Empieza por el nivel Esencial y amplíalo cuando quieras.'),
       ),
       h('div', { class: 'library-tools' },
         h('div', { class: 'segmented filter' }, filterBtns),
@@ -124,7 +123,7 @@ export function renderLibrary(root) {
             class: 'btn',
             href: `#/probar/${course.id}`,
             title: 'Juega la línea principal con sus explicaciones, sin añadir el curso',
-          }, '▶ Probar la línea principal'),
+          }, '▶ Probar'),
         );
         return;
       }
@@ -223,7 +222,6 @@ export function renderLibrary(root) {
         h('ul', null, course.covers.map((c) => h('li', null, c))),
       ),
       h('div', { class: 'levels' }, levelBtns),
-      owned ? h('p', { class: 'muted small level-help' }, 'Pulsa un nivel para repasarlo, practicarlo o volver a aprenderlo.') : null,
       action,
     );
   }
