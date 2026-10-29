@@ -1,5 +1,6 @@
 // Biblioteca: cursos listos para añadir, con niveles de profundidad (como en Chessreps).
-import { h, fill, toast } from '../dom.js';
+import { h, fill, toast, dropdown } from '../dom.js';
+import { icon } from '../icons.js';
 import { COURSES, LEVELS } from '../library.js';
 import { miniBoard, courseFen } from '../miniboard.js';
 import {
@@ -106,30 +107,41 @@ export function renderLibrary(root) {
     const action = h('div', { class: 'rep-actions' });
 
     function updateAction() {
+      const name = LEVELS[level].name;
+      // «Practicar» está siempre: con tu repertorio si ya tienes ese nivel; si no, sin añadir el curso.
+      const practiceOwn = owned && level <= ownedLevel;
+      const practiceBtn = h('a', {
+        class: 'btn',
+        href: practiceOwn
+          ? `#/entrenar/${owned.id}?modo=libre&nivel=${level}`
+          : `#/probar/${course.id}?nivel=${level}&lineas=todas`,
+        title: practiceOwn
+          ? `Todas las líneas del nivel ${name} en orden aleatorio, sin tocar tu calendario de repaso`
+          : `Todas las líneas del nivel ${name}: cada jugada nueva se enseña primero. No se añade a tus repertorios.`,
+      }, icon('target'), 'Practicar');
+
       if (!owned) {
         fill(action,
           h('button', {
             class: 'btn primary',
             onClick: () => {
               const rep = addCourse(course, level);
-              toast(`"${course.name}" añadido (${LEVELS[level].name})`, 'ok', {
+              toast(`"${course.name}" añadido (${name})`, 'ok', {
                 label: 'Entrenar',
                 onClick: () => (location.hash = `#/entrenar/${rep.id}`),
               });
               selectedLevel.delete(course.id);
               renderGrid();
             },
-          }, `Añadir · ${LEVELS[level].name}`),
-          h('a', {
-            class: 'btn',
-            href: `#/probar/${course.id}`,
-            title: 'Juega la línea principal con sus explicaciones, sin añadir el curso',
-          }, '▶ Probar'),
+          }, icon('plus'), `Añadir · ${name}`),
+          practiceBtn,
+          dropdown('⋯', [
+            { label: 'Probar solo la línea principal', href: `#/probar/${course.id}`, title: 'Con flechas y explicaciones, y después sin ayuda' },
+          ], { label: `Más opciones de ${course.name}` }),
         );
         return;
       }
 
-      const name = LEVELS[level].name;
       const updateBtn = isOutdated(owned)
         ? h('button', {
             class: 'btn primary',
@@ -140,65 +152,68 @@ export function renderLibrary(root) {
             },
           }, 'Actualizar curso')
         : null;
-      const viewBtn = h('a', { class: 'btn ghost', href: `#/editar/${owned.id}` }, 'Ver jugadas');
 
-      // Un nivel que aún no tienes: ampliar.
+      // Un nivel que aún no tienes: ampliar (y practicarlo antes, si quieres).
       if (level > ownedLevel) {
         fill(action,
           updateBtn,
           h('button', {
-            class: 'btn primary',
+            class: `btn ${updateBtn ? '' : 'primary'}`,
             onClick: () => {
               const added = expandCourse(owned, level);
               toast(`Ampliado a ${name}: ${added} jugadas nuevas`, 'ok');
               selectedLevel.delete(course.id);
               renderGrid();
             },
-          }, `Ampliar a ${name}`),
-          h('a', { class: 'btn', href: `#/entrenar/${owned.id}` }, 'Entrenar'),
-          viewBtn,
+          }, icon('plus'), `Ampliar a ${name}`),
+          practiceBtn,
+          dropdown('⋯', [
+            { label: 'Entrenar el curso', href: `#/entrenar/${owned.id}` },
+            { label: 'Ver jugadas', href: `#/editar/${owned.id}` },
+          ], { label: `Más opciones de ${course.name}` }),
         );
         return;
       }
 
-      // Un nivel que ya tienes: repasarlo, practicarlo o volver a aprenderlo.
+      // Un nivel que ya tienes: repasarlo o practicarlo; volver a aprenderlo, en el menú.
       fill(action,
         updateBtn,
         h('a', {
-          class: 'btn primary',
+          class: `btn ${updateBtn ? '' : 'primary'}`,
           href: `#/entrenar/${owned.id}?nivel=${level}`,
-          title: 'Repetición espaciada solo con las líneas de este nivel',
-        }, `Repasar ${name}`),
-        h('a', {
-          class: 'btn',
-          href: `#/entrenar/${owned.id}?modo=libre&nivel=${level}`,
-          title: 'Todas las líneas del nivel en orden aleatorio, sin tocar tu calendario de repaso',
-        }, `Practicar ${name}`),
-        h('button', {
-          class: 'btn',
-          title: 'Las jugadas de este nivel vuelven a ser nuevas y las aprendes otra vez con pistas',
-          onClick: () => {
-            if (!confirm(`¿Volver a aprender el nivel ${name} de "${course.name}" desde cero?`)) return;
-            const snap = repSnapshot(owned);
-            const count = relearnLevel(owned, level);
-            toast(
-              count ? `${count} jugadas del nivel ${name} vuelven a ser nuevas` : `El nivel ${name} ya estaba por aprender`,
-              'ok',
-              count
-                ? {
-                    label: 'Deshacer',
-                    onClick: () => {
-                      restoreSnapshot(owned, snap);
-                      renderGrid();
-                    },
-                  }
-                : null,
-            );
-            renderGrid();
+          title: `Repetición espaciada solo con las líneas del nivel ${name}`,
+        }, icon('play'), 'Repasar'),
+        practiceBtn,
+        dropdown('⋯', [
+          {
+            label: `Volver a aprender ${name}`,
+            title: 'Las jugadas de este nivel vuelven a ser nuevas y las aprendes otra vez con pistas',
+            onClick: () => relearn(name),
           },
-        }, `↺ Volver a aprender ${name}`),
-        viewBtn,
+          { label: 'Contrarreloj', href: `#/contrarreloj/${owned.id}?nivel=${level}` },
+          { label: 'Ver jugadas', href: `#/editar/${owned.id}` },
+        ], { label: `Más opciones de ${course.name}` }),
       );
+    }
+
+    function relearn(name) {
+      if (!confirm(`¿Volver a aprender el nivel ${name} de "${course.name}" desde cero?`)) return;
+      const snap = repSnapshot(owned);
+      const count = relearnLevel(owned, level);
+      toast(
+        count ? `${count} jugadas del nivel ${name} vuelven a ser nuevas` : `El nivel ${name} ya estaba por aprender`,
+        'ok',
+        count
+          ? {
+              label: 'Deshacer',
+              onClick: () => {
+                restoreSnapshot(owned, snap);
+                renderGrid();
+              },
+            }
+          : null,
+      );
+      renderGrid();
     }
 
     updateAction();

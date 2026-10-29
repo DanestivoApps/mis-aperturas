@@ -37,10 +37,12 @@ const SHORTCUTS = [
   ['?', 'Ver estos atajos'],
 ];
 
-export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = false, nivel = null, curso = null }) {
+export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = false, nivel = null, curso = null, todas = false }) {
   // Probar un curso: un repertorio en memoria que no se guarda.
+  // Con `todas`, se practican todas las líneas del nivel elegido (no solo la principal).
   const previewCourse = curso ? getCourse(curso) : null;
-  const rep = previewCourse ? previewRepertoire(previewCourse) : curso ? null : getRepertoire(id);
+  const previewLevel = previewCourse && todas ? Math.min(Math.max(nivel ?? 0, 0), previewCourse.levels.length - 1) : 0;
+  const rep = previewCourse ? previewRepertoire(previewCourse, previewLevel) : curso ? null : getRepertoire(id);
   if (!rep) {
     root.append(h('section', { class: 'page' },
       h('h1', null, curso ? 'Curso no encontrado' : 'Repertorio no encontrado'),
@@ -50,6 +52,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   if (previewCourse) modo = 'prueba';
   else if (!MODES[modo] || modo === 'prueba') modo = 'repaso';
   const preview = modo === 'prueba';
+  const previewAll = preview && todas;
   const srs = modo === 'repaso';
   // Solo el repaso toca el calendario (y deja de hacerlo al repasar los fallos de la sesión).
   let grading = srs;
@@ -61,7 +64,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const edges = course ? levelEdges(course, nivel) : null;
   const levelQuery = course ? `&nivel=${nivel}` : '';
   const lines = preview
-    ? allLines(rep).slice(0, 1)
+    ? previewAll ? allLines(rep) : allLines(rep).slice(0, 1)
     : allLines(rep).filter(
         (line) =>
           line.length > prefix.length &&
@@ -96,7 +99,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     skipped: new Set(),
     mistakes: new Map(), // "posición|jugada" → { line, idx, played }
     retry: false, // repasando los fallos de esta sesión
-    assist: preview, // en la prueba, la primera vuelta es con ayuda
+    assist: preview && !previewAll, // en la prueba de la línea principal, la primera vuelta es con ayuda
+    seen: new Set(), // al practicar un curso sin añadirlo: posiciones ya enseñadas en esta sesión
   };
   // Las líneas salen de una cola (y las falladas vuelven al final) salvo en el repaso.
   const queued = () => !srs || session.retry;
@@ -112,10 +116,14 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const dots = h('div', { class: 'line-dots', title: 'Tus jugadas en esta línea' });
   const counters = h('div', { class: 'chips' });
   const summary = h('div', { class: 'train-summary' });
-  const modeText = h('p', { class: 'muted small' }, MODES[modo], prefix.length ? ' Desde la posición elegida.' : '');
+  const modeText = h('p', { class: 'muted small' },
+    previewAll
+      ? `Práctica del curso: todas las líneas del nivel ${LEVELS[previewLevel].name}. Cada jugada nueva se enseña primero. No se añade a tus repertorios.`
+      : MODES[modo],
+    prefix.length ? ' Desde la posición elegida.' : '');
   const hintBtn = h('button', { class: 'btn', onClick: showHint, title: 'Primero te marca la pieza; si vuelves a pulsar, la jugada (atajo: H)' }, icon('bulb'), 'Pista');
   const nextBtn = h('button', { class: 'btn primary', hidden: true, onClick: nextLine, title: 'Atajo: Enter' }, 'Siguiente línea →');
-  const skipBtn = h('button', { class: 'btn', hidden: preview, onClick: skipLine, title: 'Atajo: S' }, icon('skip'), 'Saltar');
+  const skipBtn = h('button', { class: 'btn', hidden: preview && !previewAll, onClick: skipLine, title: 'Atajo: S' }, icon('skip'), 'Saltar');
   const repeatBtn = h('button', { class: 'btn', onClick: repeatLine, title: 'Vuelve a jugar esta línea desde el principio (atajo: R)' }, icon('repeat'), 'Repetir');
   const baseActions = [nextBtn, hintBtn, repeatBtn, skipBtn];
   const actions = h('div', { class: 'actions' }, baseActions);
@@ -188,7 +196,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   function updateCounters() {
     const s = scopeStats(rep, lines, { fromIndex: prefix.length });
     let progress;
-    if (preview) progress = h('span', { class: 'chip' }, session.assist ? 'Primera vuelta: con ayuda' : 'Ahora tú, sin ayuda');
+    if (preview && !previewAll) progress = h('span', { class: 'chip' }, session.assist ? 'Primera vuelta: con ayuda' : 'Ahora tú, sin ayuda');
     else if (srs && !session.retry) {
       progress = [
         h('span', { class: `chip ${s.due ? 'due' : ''}` }, `${s.due} para repasar`),
@@ -399,7 +407,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     cur.failed = false;
     const last = cur.line[cur.idx - 1];
     syncBoard(last ? squaresOf(last.move.uci) : undefined, true);
-    if ((grading && !card) || cur.assist) {
+    if ((grading && !card) || cur.assist || (previewAll && !session.seen.has(step.from))) {
       // Jugada nueva (o primera vuelta de la prueba): se enseña primero.
       cur.hinted = true;
       if (grading) session.newBudget--;
@@ -425,6 +433,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       cur.awaiting = false;
       const clean = !cur.failed && !cur.hinted;
       cur.results[cur.idx] = clean ? 'ok' : cur.failed ? 'bad' : 'learn';
+      session.seen.add(step.from);
       updateDots();
       gradeSuccess(step);
       setShapes([]);
@@ -528,7 +537,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   }
 
   function skipLine() {
-    if (!cur || preview) return;
+    if (!cur || (preview && !previewAll)) return;
     session.skipped.add(lineId(cur.line));
     cur.awaiting = false;
     nextLine();
@@ -675,9 +684,10 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   function finishPreview() {
     if (!lines.length) return say('Este curso no tiene líneas.', 'warn');
     play('done');
+    const what = previewAll ? `Práctica terminada: ${session.lines} ${session.lines === 1 ? 'línea' : 'líneas'}` : 'Prueba terminada';
     say(session.wrong
-      ? `Prueba terminada, con ${session.wrong} ${session.wrong === 1 ? 'fallo' : 'fallos'}.`
-      : '¡Prueba terminada sin fallos! 🎉', 'ok');
+      ? `${what}, con ${session.wrong} ${session.wrong === 1 ? 'fallo' : 'fallos'}.`
+      : `${what} sin fallos. 🎉`, 'ok');
     const owned = ownedFrom(previewCourse.id);
     const stats = levelStats(previewCourse);
     fill(comment, h('p', { class: 'muted' },
@@ -690,12 +700,12 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
         : h('button', {
             class: 'btn primary',
             onClick: () => {
-              const added = addCourse(previewCourse, 0);
-              toast(`"${previewCourse.name}" añadido (${LEVELS[0].name})`, 'ok');
+              const added = addCourse(previewCourse, previewLevel);
+              toast(`"${previewCourse.name}" añadido (${LEVELS[previewLevel].name})`, 'ok');
               location.hash = `#/entrenar/${added.id}`;
             },
-          }, `Añadir el curso (${LEVELS[0].name})`),
-      h('button', { class: 'btn', onClick: restart }, '↺ Probar otra vez'),
+          }, `Añadir el curso (${LEVELS[previewLevel].name})`),
+      h('button', { class: 'btn', onClick: restart }, previewAll ? '↺ Otra vuelta' : '↺ Probar otra vez'),
       h('a', { class: 'btn ghost', href: '#/biblioteca' }, 'Volver a la biblioteca'),
     );
   }

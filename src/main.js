@@ -30,7 +30,12 @@ const routes = [
       todo: query.get('todo') === '1',
       nivel: query.has('nivel') ? Number(query.get('nivel')) : null,
     })],
-  [/^#\/probar\/([^/?]+)/, (el, match) => renderTrain(el, { curso: match[1] })],
+  [/^#\/probar\/([^/?]+)/, (el, match, query) =>
+    renderTrain(el, {
+      curso: match[1],
+      nivel: query.has('nivel') ? Number(query.get('nivel')) : null,
+      todas: query.get('lineas') === 'todas',
+    })],
   [/^#\/contrarreloj\/([^/?]+)/, (el, match, query) =>
     renderDrill(el, { id: match[1], nivel: query.has('nivel') ? Number(query.get('nivel')) : null })],
   [/^#\/estadisticas/, (el) => renderStats(el)],

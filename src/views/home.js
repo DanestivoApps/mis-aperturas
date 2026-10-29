@@ -161,12 +161,15 @@ function repCard(rep) {
         : null,
     ),
     h('div', { class: 'rep-actions' },
-      pending
-        ? h('a', { class: 'btn primary', href: `#/entrenar/${rep.id}` }, `Entrenar (${pending})`)
-        : s.total
-          ? h('a', { class: 'btn', href: `#/entrenar/${rep.id}?modo=libre`, title: 'Todas las líneas, sin tocar tus fechas de repaso' }, 'Practicar')
-          : null,
-      h('a', { class: 'btn ghost', href: `#/editar/${rep.id}` }, s.total ? 'Editar' : 'Añadir jugadas'),
+      pending ? h('a', { class: 'btn primary', href: `#/entrenar/${rep.id}` }, icon('play'), `Entrenar (${pending})`) : null,
+      s.total
+        ? h('a', {
+            class: `btn ${pending ? '' : 'primary'}`,
+            href: `#/entrenar/${rep.id}?modo=libre`,
+            title: 'Todas las líneas en orden aleatorio, sin tocar tus fechas de repaso',
+          }, icon('target'), 'Practicar')
+        : null,
+      s.total ? null : h('a', { class: 'btn primary', href: `#/editar/${rep.id}` }, icon('pencil'), 'Añadir jugadas'),
     ),
   );
 }
@@ -174,10 +177,10 @@ function repCard(rep) {
 function repMenu(rep, s) {
   const weak = weakKeys(rep).length;
   return dropdown('⋯', [
-    s.total ? { label: 'Práctica libre', href: `#/entrenar/${rep.id}?modo=libre`, title: 'Todas las líneas en orden aleatorio, sin tocar tus fechas de repaso' } : null,
     weak ? { label: `Repasar mis errores (${weak})`, href: `#/entrenar/${rep.id}?modo=errores` } : null,
     s.total ? { label: 'Contrarreloj', href: `#/contrarreloj/${rep.id}` } : null,
-    s.total ? 'sep' : null,
+    { label: 'Editar jugadas', href: `#/editar/${rep.id}` },
+    'sep',
     { label: 'Renombrar', onClick: () => renameRep(rep) },
     {
       label: 'Duplicar',
