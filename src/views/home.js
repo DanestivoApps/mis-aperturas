@@ -3,7 +3,7 @@ import { h, toast, download, safeFilename, openDialog } from '../dom.js';
 import { getData, addRepertoire, removeRepertoire, save, exportBackup, importBackup, streak, todayCount } from '../store.js';
 import { newRepertoire, importPgn, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
 import { describeDue } from '../srs.js';
-import { LEVELS } from '../library.js';
+import { LEVELS, COURSES } from '../library.js';
 import { outdatedReps, updateCourse, updateMessage, restoreCourse, repSnapshot, restoreSnapshot } from '../courses.js';
 
 export function renderHome(root) {
@@ -74,7 +74,7 @@ export function renderHome(root) {
             h('span', { class: 'library-cta-icon' }, '📚'),
             h('span', null,
               h('strong', null, 'Empieza con la biblioteca de aperturas'),
-              h('span', { class: 'muted' }, '22 cursos con explicaciones y variantes del rival: Italiana, Española, Escocesa, Londres, Gambito de Dama, Caro-Kann, Francesa, Siciliana, Eslava, India de Rey…'),
+              h('span', { class: 'muted' }, `${COURSES.length} cursos con explicaciones y variantes del rival: Italiana, Española, Londres, Inglesa, Gambito de Dama, Caro-Kann, Francesa, Najdorf, Nimzoindia, Holandesa…`),
             ),
             h('span', { class: 'btn primary' }, 'Ver cursos →'),
           ),

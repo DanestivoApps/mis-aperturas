@@ -48,7 +48,8 @@ Lichess y Chess.com sí necesitan internet).
 ### Biblioteca de aperturas
 Cursos listos para añadir, al estilo de Chessreps, con la idea de cada jugada explicada y
 las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **Avanzado**,
-**Completo**) y puedes ampliarlo cuando quieras sin perder tus cambios.
+**Completo**) y puedes ampliarlo cuando quieras sin perder tus cambios. Todas tus jugadas del
+nivel Esencial tienen su explicación.
 
 | Con blancas | Con negras |
 | --- | --- |
@@ -63,6 +64,9 @@ las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **A
 | Contra la Caro-Kann: Avance | Gambito de Dama Aceptado (contra 1.d4) |
 | Contra la Escandinava | India de Rey (contra 1.d4) |
 | Contra Pirc, Moderna y Alekhine | Contra la Inglesa y la Réti (encaja con Caro-Kann y Eslava) |
+| Apertura Inglesa (1.c4, contra todo) | Siciliana Najdorf (contra 1.e4) |
+| | Defensa Nimzoindia y Bogoindia (contra 1.d4) |
+| | Defensa Holandesa: Leningrado (contra 1.d4, 1.c4 y 1.Cf3) |
 
 Si se mejora un curso que ya tienes, la app avisa y lo actualiza conservando tu progreso, las
 jugadas que añadiste tú y las que borraste a propósito. La biblioteca tiene buscador (sin
@@ -83,7 +87,7 @@ importar tildes ni mayúsculas) y un botón **▶ Probar la línea principal** p
 Los reinicios también se respetan al sincronizar con tus otros dispositivos.
 
 Calidad: los tests comprueban que todas las jugadas son legales, que no hay posiciones sin
-respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 22 cursos
+respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 26 cursos
 (las tuyas y las del rival) se revisaron con Stockfish 19 a profundidad 18, y 20–22 en los casos
 dudosos, y se corrigieron las que perdían ventaja. Las jugadas del rival que son errores graves
 son trampas a propósito y están explicadas. Las afirmaciones concretas de los comentarios
@@ -127,6 +131,8 @@ pega un **PGN**, y las compara con tus repertorios:
 - **Resumen de fallos** al terminar: qué jugaste, cuál era la buena y un enlace a la posición.
   Con **Repasar mis fallos** vuelves a jugar al momento esas líneas (sin tocar el calendario).
 - **Pista en dos pasos**: primero te marca la pieza que hay que mover; si vuelves a pedirla, la jugada.
+- **⏮ ◀ ▶ ⏭** bajo el tablero (o las flechas del teclado) para repasar las jugadas de la línea;
+  también puedes pulsar cualquier jugada de la lista. Mirar atrás no cambia nada.
 - **⏱ Contrarreloj**: posiciones sueltas de tu repertorio, sin orden, en 1, 3 o 5 minutos.
   Cada acierto suma un punto y cada fallo resta 10 segundos. Guarda tu récord (también por
   nivel) y no cambia tus fechas de repaso.
@@ -147,7 +153,8 @@ Todo vive en el `localStorage` del navegador. Desde el inicio puedes descargar o
 una copia de seguridad en JSON (la copia no incluye tu token de Lichess).
 
 Atajos: `←` `→` `Inicio` `Fin` `F` (girar) en el editor; al entrenar, `H` (pista), `R` (repetir línea),
-`S` (saltar línea), `Enter` (siguiente línea) y `?` (lista de atajos).
+`S` (saltar línea), `←` `→` `Inicio` `Fin` (moverte por la línea), `F` (girar), `Enter` (siguiente
+línea) y `?` (lista de atajos).
 
 ## Token de Lichess (para el explorador)
 
