@@ -90,6 +90,8 @@ export function renderSettings(root) {
           h('span', null, 'Velocidad de las jugadas del rival'),
           segmented(SPEEDS, s.opponentDelay, (v) => updateSettings({ opponentDelay: v })),
         ),
+        toggle('showMoves', 'Ver siempre la jugada que toca',
+          'Al entrenar, cada turno tuyo muestra la flecha de la jugada. También se activa con el botón «Ver jugada» junto al tablero (o la tecla V).'),
         toggle('skipKnown', 'Saltar las jugadas que ya sabes',
           'En el repaso, tus jugadas que no tocan repasar se juegan solas. Más rápido, pero repasas menos.'),
         toggle('sound', 'Sonidos', 'Jugadas, aciertos y fallos.', (on) => on && play('correct')),

@@ -2748,3 +2748,24 @@ textarea:focus {
 .rep-actions .btn:not(.primary):not(.icon-only) {
   flex: 0 1 auto;
 }
+
+/* Interruptor «Ver jugada» junto a los controles del tablero */
+.board-controls .moves-toggle {
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.board-controls .moves-toggle[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+@media (max-width: 420px) {
+  .board-controls .moves-toggle span:not(.ico) {
+    display: none;
+  }
+}

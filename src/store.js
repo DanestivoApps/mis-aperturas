@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = {
   coordinates: true,
   boardTheme: 'brown',
   skipKnown: false, // en el repaso, juega solas tus jugadas que no tocan
+  showMoves: false, // al entrenar, muestra la flecha de la jugada que toca
   vibrate: true, // vibra al fallar (en los móviles que lo permiten)
   dailyGoal: 20, // jugadas respondidas al día (0 = sin objetivo)
   theme: 'auto', // 'auto' (como el sistema), 'light' o 'dark'

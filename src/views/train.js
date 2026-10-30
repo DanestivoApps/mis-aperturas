@@ -5,7 +5,7 @@
 // Modo "prueba": la línea principal de un curso de la biblioteca, sin añadirlo ni guardar nada.
 import { Chess } from 'chess.js';
 import { h, fill, toast, openDialog } from '../dom.js';
-import { getRepertoire, getData, getSettings, save } from '../store.js';
+import { getRepertoire, getData, getSettings, updateSettings, save } from '../store.js';
 import { noteAnswer, buzz } from '../feedback.js';
 import { allLines, isUserTurn, repStats, stepLabel, START_FEN } from '../repertoire.js';
 import { lineId, pickSrsLine, weakLines, scopeStats, uniqueLines, shuffle } from '../session.js';
@@ -34,6 +34,7 @@ const SHORTCUTS = [
   ['← →', 'Jugada anterior / siguiente de la línea'],
   ['Inicio / Fin', 'Principio de la línea / posición actual'],
   ['F', 'Girar el tablero'],
+  ['V', 'Mostrar u ocultar la jugada que toca (flecha)'],
   ['?', 'Ver estos atajos'],
 ];
 
@@ -149,6 +150,16 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     h('button', { type: 'button', class: 'link-btn keys-hint', onClick: showShortcuts }, '⌨ Atajos de teclado (?)'),
   );
 
+  // «Ver jugada»: con él activado, cada turno tuyo muestra la flecha de la jugada (se recuerda).
+  let showMoves = Boolean(settings.showMoves);
+  const movesBtn = h('button', {
+    type: 'button',
+    class: 'icon-btn moves-toggle',
+    title: 'Mostrar u ocultar la flecha de la jugada que toca (atajo: V)',
+    'aria-pressed': String(showMoves),
+    onClick: () => toggleMoves(),
+  }, icon('eye'), h('span', null, 'Ver jugada'));
+
   // Navegación por las jugadas de la línea: mirar atrás no cambia nada.
   let viewPly = null; // jugada que estás mirando (null = la posición actual)
   let liveShapes = []; // flechas de la posición actual, para recuperarlas al volver
@@ -168,6 +179,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       h('div', { class: 'board-controls' },
         Object.values(navBtns),
         h('button', { class: 'icon-btn', title: 'Girar el tablero (F)', onClick: () => board.toggleOrientation() }, '⟲'),
+        movesBtn,
       ),
       navNote,
     ),
@@ -403,6 +415,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     cur.awaiting = true;
     updateDots();
     cur.hinted = false;
+    cur.showing = false;
     cur.hintLevel = 0;
     cur.failed = false;
     const last = cur.line[cur.idx - 1];
@@ -416,8 +429,36 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       say(cur.assist ? `Juega ${label} (flecha verde).` : `Jugada nueva: memoriza ${label} y juégala.`, 'info');
       // La explicación se muestra antes de jugarla, para aprender la idea y no solo la jugada.
       if (step.move.comment) comment.append(h('p', { class: 'learn' }, '💡 ', step.move.comment));
+    } else if (showMoves) {
+      showCurrentMove(step);
     } else {
       setShapes([]);
+      say('Tu turno: ¿qué jugarías aquí?');
+    }
+  }
+
+  // Enseña la jugada que toca (interruptor «Ver jugada»): no cuenta como acierto ni como fallo.
+  function showCurrentMove(step) {
+    cur.hinted = true;
+    cur.showing = true;
+    setShapes([arrow(step.move.uci, 'green')]);
+    say(`Juega ${stepLabel(rep, step, true, san)} (flecha verde).`, 'info');
+    if (step.move.comment && !comment.querySelector('.learn')) {
+      comment.append(h('p', { class: 'learn' }, '💡 ', step.move.comment));
+    }
+  }
+
+  function toggleMoves() {
+    showMoves = !showMoves;
+    updateSettings({ showMoves });
+    movesBtn.setAttribute('aria-pressed', String(showMoves));
+    if (!cur?.awaiting) return;
+    view(null);
+    const step = cur.line[cur.idx];
+    if (showMoves && (!cur.hinted || cur.showing)) showCurrentMove(step);
+    else if (!showMoves && cur.showing) {
+      setShapes([]);
+      comment.querySelector('.learn')?.remove();
       say('Tu turno: ¿qué jugarías aquí?');
     }
   }
@@ -467,7 +508,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     flash('shake');
     buzz();
     if (cur.hinted && !cur.failed) {
-      say(`${cur.assist ? 'Fíjate en la flecha' : 'Es una jugada nueva'}: juega ${san(step.move.san)} (flecha verde).`, 'info');
+      say(`${cur.assist || cur.showing ? 'Fíjate en la flecha' : 'Es una jugada nueva'}: juega ${san(step.move.san)} (flecha verde).`, 'info');
     } else {
       registerFailure(step, move.san);
       say(`No es ${san(move.san)}. La jugada de tu repertorio es ${san(step.move.san)}: juégala para seguir.`, 'bad');
@@ -746,6 +787,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       view(null);
     } else if (key === 'f') {
       board.toggleOrientation();
+    } else if (key === 'v') {
+      toggleMoves();
     }
   }
   document.addEventListener('keydown', onKey);

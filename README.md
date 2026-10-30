@@ -140,6 +140,9 @@ pega un **PGN**, y las compara con tus repertorios:
 - **Resumen de fallos** al terminar: qué jugaste, cuál era la buena y un enlace a la posición.
   Con **Repasar mis fallos** vuelves a jugar al momento esas líneas (sin tocar el calendario).
 - **Pista en dos pasos**: primero te marca la pieza que hay que mover; si vuelves a pedirla, la jugada.
+- **👁 Ver jugada** (junto al tablero, tecla `V` o en Ajustes): muestra en cada turno la flecha de la
+  jugada que toca, con su explicación. Sirve para practicar líneas que aún no sabes; esas jugadas no
+  cuentan como aciertos ni cambian tus fechas de repaso.
 - **⏮ ◀ ▶ ⏭** bajo el tablero (o las flechas del teclado) para repasar las jugadas de la línea;
   también puedes pulsar cualquier jugada de la lista. Mirar atrás no cambia nada.
 - **⏱ Contrarreloj**: posiciones sueltas de tu repertorio, sin orden, en 1, 3 o 5 minutos.
@@ -162,7 +165,7 @@ Todo vive en el `localStorage` del navegador. En Ajustes puedes descargar o rest
 una copia de seguridad en JSON (la copia no incluye tu token de Lichess).
 
 Atajos: `←` `→` `Inicio` `Fin` `F` (girar) en el editor; al entrenar, `H` (pista), `R` (repetir línea),
-`S` (saltar línea), `←` `→` `Inicio` `Fin` (moverte por la línea), `F` (girar), `Enter` (siguiente
+`S` (saltar línea), `V` (ver jugada), `←` `→` `Inicio` `Fin` (moverte por la línea), `F` (girar), `Enter` (siguiente
 línea) y `?` (lista de atajos).
 
 ## Token de Lichess (para el explorador)
