@@ -36,6 +36,7 @@ const COURSE_PLY = {
   'pirc-alekhine': 7, 'caro-kann': 4, 'dragon-acelerado': 8, eslava: 4, 'india-de-rey': 8, espanola: 5,
   'gambito-dama': 3, petrov: 4, escandinava: 2, gda: 4, 'contra-inglesa-reti': 2, vienesa: 3, escocesa: 5,
   francesa: 6, gdr: 4, kan: 8, inglesa: 7, najdorf: 10, nimzoindia: 6, holandesa: 8,
+  'dos-caballos': 6, pirc: 6, grunfeld: 6, catalana: 7, 'ataque-indio-rey': 11,
 };
 
 const fenCache = new Map();

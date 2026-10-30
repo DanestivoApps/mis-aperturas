@@ -74,8 +74,11 @@ nivel Esencial tienen su explicación.
 | Contra la Escandinava | India de Rey (contra 1.d4) |
 | Contra Pirc, Moderna y Alekhine | Contra la Inglesa y la Réti (encaja con Caro-Kann y Eslava) |
 | Apertura Inglesa (1.c4, contra todo) | Siciliana Najdorf (contra 1.e4) |
-| | Defensa Nimzoindia y Bogoindia (contra 1.d4) |
-| | Defensa Holandesa: Leningrado (contra 1.d4, 1.c4 y 1.Cf3) |
+| Apertura Catalana (contra 1...Cf6 y 1...d5) | Defensa Nimzoindia y Bogoindia (contra 1.d4) |
+| Ataque Indio de Rey (contra 1...e6, 1...c5 y 1...c6) | Defensa Holandesa: Leningrado (contra 1.d4, 1.c4 y 1.Cf3) |
+| | 1...e5: Dos Caballos y Berlinesa (contra 1.e4) |
+| | Defensa Pirc (contra 1.e4) |
+| | Defensa Grünfeld (contra 1.d4) |
 
 Si se mejora un curso que ya tienes, la app avisa y lo actualiza conservando tu progreso, las
 jugadas que añadiste tú y las que borraste a propósito. La biblioteca tiene buscador (sin
@@ -96,7 +99,7 @@ importar tildes ni mayúsculas) y un botón **▶ Probar** para jugar la línea 
 Los reinicios también se respetan al sincronizar con tus otros dispositivos.
 
 Calidad: los tests comprueban que todas las jugadas son legales, que no hay posiciones sin
-respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 26 cursos
+respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 31 cursos
 (las tuyas y las del rival) se revisaron con Stockfish 19 a profundidad 18, y 20–22 en los casos
 dudosos, y se corrigieron las que perdían ventaja. Las jugadas del rival que son errores graves
 son trampas a propósito y están explicadas. Las afirmaciones concretas de los comentarios
