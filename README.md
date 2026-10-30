@@ -140,8 +140,9 @@ pega un **PGN**, y las compara con tus repertorios:
 - **Resumen de fallos** al terminar: qué jugaste, cuál era la buena y un enlace a la posición.
   Con **Repasar mis fallos** vuelves a jugar al momento esas líneas (sin tocar el calendario).
 - **Pista en dos pasos**: primero te marca la pieza que hay que mover; si vuelves a pedirla, la jugada.
-- **👁 Ver jugada** (junto al tablero, tecla `V` o en Ajustes): muestra en cada turno la flecha de la
-  jugada que toca, con su explicación. Sirve para practicar líneas que aún no sabes; esas jugadas no
+- **👁 Ver jugada** (junto al tablero o tecla `V`): muestra en cada turno la flecha de la jugada que
+  toca, con su explicación. Al **practicar** empieza activado y al **entrenar** desactivado (se puede
+  cambiar en Ajustes); el botón lo cambia solo para esa sesión. Las jugadas hechas con la flecha no
   cuentan como aciertos ni cambian tus fechas de repaso.
 - **⏮ ◀ ▶ ⏭** bajo el tablero (o las flechas del teclado) para repasar las jugadas de la línea;
   también puedes pulsar cualquier jugada de la lista. Mirar atrás no cambia nada.

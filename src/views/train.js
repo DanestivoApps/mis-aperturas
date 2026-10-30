@@ -5,7 +5,7 @@
 // Modo "prueba": la línea principal de un curso de la biblioteca, sin añadirlo ni guardar nada.
 import { Chess } from 'chess.js';
 import { h, fill, toast, openDialog } from '../dom.js';
-import { getRepertoire, getData, getSettings, updateSettings, save } from '../store.js';
+import { getRepertoire, getData, getSettings, save } from '../store.js';
 import { noteAnswer, buzz } from '../feedback.js';
 import { allLines, isUserTurn, repStats, stepLabel, START_FEN } from '../repertoire.js';
 import { lineId, pickSrsLine, weakLines, scopeStats, uniqueLines, shuffle } from '../session.js';
@@ -152,12 +152,15 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     h('button', { type: 'button', class: 'link-btn keys-hint', onClick: showShortcuts }, '⌨ Atajos de teclado (?)'),
   );
 
-  // «Ver jugada»: con él activado, cada turno tuyo muestra la flecha de la jugada (se recuerda).
-  let showMoves = Boolean(settings.showMoves);
+  // «Ver jugada»: con él activado, cada turno tuyo muestra la flecha de la jugada.
+  // Empieza desactivado al entrenar (repaso, errores) y activado al practicar (Ajustes puede cambiarlo);
+  // el botón lo cambia solo para esta sesión.
+  const practicing = modo === 'libre' || previewAll;
+  let showMoves = Boolean(practicing ? settings.showMovesPractice : settings.showMovesTrain);
   const movesBtn = h('button', {
     type: 'button',
     class: 'icon-btn moves-toggle',
-    title: 'Mostrar u ocultar la flecha de la jugada que toca (atajo: V)',
+    title: 'Mostrar u ocultar la flecha de la jugada que toca (atajo: V). Al practicar empieza activado; al entrenar, no.',
     'aria-pressed': String(showMoves),
     onClick: () => toggleMoves(),
   }, icon('eye'), h('span', null, 'Ver jugada'));
@@ -453,7 +456,6 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
 
   function toggleMoves() {
     showMoves = !showMoves;
-    updateSettings({ showMoves });
     movesBtn.setAttribute('aria-pressed', String(showMoves));
     if (!cur?.awaiting) return;
     view(null);
