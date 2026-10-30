@@ -15,6 +15,7 @@ import { reviewRepertoire } from '../review.js';
 import { getCourse, LEVELS } from '../library.js';
 import { expandCourse, updateCourse, updateMessage, isOutdated } from '../courses.js';
 import { san } from '../notation.js';
+import { icon } from '../icons.js';
 
 export function renderEditor(root, { id, ruta = '' }) {
   const rep = getRepertoire(id);
@@ -192,13 +193,13 @@ export function renderEditor(root, { id, ruta = '' }) {
                         class: 'icon-btn',
                         title: 'Hacer principal (primera al exportar y al avanzar con →)',
                         onClick: () => makeMain(key, m),
-                      }, '↑')
+                      }, icon('up'))
                     : null,
                   h('button', {
                     class: 'icon-btn danger',
                     title: 'Borrar esta jugada y lo que cuelga de ella',
                     onClick: () => removeMove(key, m),
-                  }, '🗑'),
+                  }, icon('trash')),
                 ),
               ),
             )

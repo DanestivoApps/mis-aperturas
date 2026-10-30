@@ -2769,3 +2769,59 @@ textarea:focus {
     display: none;
   }
 }
+
+/* ---------- Revisión de la interfaz ---------- */
+.rep-status {
+  margin: -4px 0 0;
+  color: var(--muted);
+}
+
+.rep-status .due {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.rep-status .ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.rep-status .warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.head-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.head-chips .chips {
+  display: contents;
+}
+
+.mode-chip {
+  background: var(--info-soft);
+  color: var(--info);
+  font-weight: 600;
+  cursor: help;
+}
+
+.add-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.move-rows .icon-btn .ico {
+  width: 18px;
+  height: 18px;
+}
+
+.move-rows .icon-btn.danger {
+  color: var(--bad);
+}

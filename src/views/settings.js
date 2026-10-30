@@ -112,8 +112,8 @@ export function renderSettings(root) {
           h('span', null, 'Cómo se escriben las jugadas'),
           segmented(
             [
-              { value: 'es', label: 'Española: Cf3, Ac4, Te1, Dd2, Rg1' },
-              { value: 'en', label: 'Inglesa: Nf3, Bc4, Re1, Qd2, Kg1' },
+              { value: 'es', label: 'Española (Cf3, Ac4)' },
+              { value: 'en', label: 'Inglesa (Nf3, Bc4)' },
             ],
             s.notation,
             (v) => updateSettings({ notation: v }),

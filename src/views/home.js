@@ -24,8 +24,7 @@ export function renderHome(root) {
     h('div', { class: 'section-head' },
       h('h2', null, 'Tus repertorios'),
       h('div', { class: 'section-actions' },
-        h('button', { class: 'btn', onClick: newRepDialog }, icon('plus'), 'Nuevo'),
-        h('a', { class: 'btn', href: '#/biblioteca' }, icon('book'), 'Biblioteca'),
+        h('button', { class: 'btn', onClick: addDialog }, icon('plus'), 'Añadir'),
       ),
     ),
     h('div', { class: 'rep-grid' }, reps.map(repCard)),
@@ -148,17 +147,10 @@ function repCard(rep) {
         ),
         h('div', { class: 'rep-progress' },
       h('div', { class: 'progress', title: `${pct}% aprendido` }, h('span', { style: `width:${pct}%` })),
-          h('span', { class: 'muted small' }, s.total ? `${s.learned} de ${s.total} aprendidas` : 'Sin jugadas todavía'),
+          h('span', { class: 'muted small' }, s.total ? `${s.learned}/${s.total} aprendidas` : 'Sin jugadas todavía'),
         ),
+        repStatus(s, pending, freshToday, nextDue),
       ),
-    ),
-    h('div', { class: 'chips' },
-      s.due ? h('span', { class: 'chip due' }, `${s.due} para repasar`) : null,
-      freshToday ? h('span', { class: 'chip' }, plural(freshToday, 'nueva', 'nuevas')) : null,
-      s.gaps ? h('span', { class: 'chip warn', title: 'Posiciones donde te toca mover y no tienes respuesta' }, `${s.gaps} sin respuesta`) : null,
-      !pending && s.total
-        ? h('span', { class: 'chip ok' }, `Al día${Number.isFinite(nextDue) ? ` · ${describeDue(nextDue)}` : ''}`)
-        : null,
     ),
     h('div', { class: 'rep-actions' },
       pending ? h('a', { class: 'btn primary', href: `#/entrenar/${rep.id}` }, icon('play'), `Entrenar (${pending})`) : null,
@@ -172,6 +164,21 @@ function repCard(rep) {
       s.total ? null : h('a', { class: 'btn primary', href: `#/editar/${rep.id}` }, icon('pencil'), 'Añadir jugadas'),
     ),
   );
+}
+
+// Qué toca en este repertorio, en una línea: lo pendiente, o cuándo es el próximo repaso.
+function repStatus(s, pending, freshToday, nextDue) {
+  const parts = [];
+  if (s.due) parts.push(h('span', { class: 'due' }, `${s.due} para repasar`));
+  if (freshToday) parts.push(plural(freshToday, 'nueva', 'nuevas'));
+  if (!pending && s.total) {
+    parts.push(h('span', { class: 'ok' }, `✓ Al día${Number.isFinite(nextDue) ? ` · repaso ${describeDue(nextDue)}` : ''}`));
+  }
+  if (s.gaps) {
+    parts.push(h('span', { class: 'warn', title: 'Posiciones donde te toca mover y no tienes respuesta' }, `${s.gaps} sin respuesta`));
+  }
+  if (!parts.length) return null;
+  return h('p', { class: 'rep-status small' }, parts.flatMap((p, i) => (i ? [' · ', p] : [p])));
 }
 
 function repMenu(rep, s) {
@@ -248,6 +255,28 @@ function renameRep(rep) {
   rep.name = name.trim();
   save(rep);
   rerender();
+}
+
+// ---------- Añadir ----------
+function addDialog() {
+  const close = openDialog('Añadir un repertorio',
+    h('div', { class: 'add-options' },
+      h('a', { class: 'welcome-option primary', href: '#/biblioteca', onClick: () => close() },
+        h('span', { class: 'welcome-icon' }, icon('book')),
+        h('span', null,
+          h('strong', null, 'Un curso de la biblioteca'),
+          h('span', { class: 'muted small' }, `${COURSES.length} aperturas con la idea de cada jugada explicada.`)),
+        h('span', { class: 'welcome-arrow' }, icon('arrow')),
+      ),
+      h('button', { class: 'welcome-option', type: 'button', onClick: () => { close(); newRepDialog(); } },
+        h('span', { class: 'welcome-icon' }, icon('pencil')),
+        h('span', null,
+          h('strong', null, 'Tu propio repertorio'),
+          h('span', { class: 'muted small' }, 'Juega las jugadas en el tablero o importa un PGN.')),
+        h('span', { class: 'welcome-arrow' }, icon('arrow')),
+      ),
+    ),
+  );
 }
 
 // ---------- Nuevo repertorio ----------
