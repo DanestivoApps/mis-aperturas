@@ -37,6 +37,7 @@ const COURSE_PLY = {
   'gambito-dama': 3, petrov: 4, escandinava: 2, gda: 4, 'contra-inglesa-reti': 2, vienesa: 3, escocesa: 5,
   francesa: 6, gdr: 4, kan: 8, inglesa: 7, najdorf: 10, nimzoindia: 6, holandesa: 8,
   'dos-caballos': 6, pirc: 6, grunfeld: 6, catalana: 7, 'ataque-indio-rey': 11, 'alien-gambit': 11,
+  stafford: 6, englund: 4, 'fried-liver': 11, 'smith-morra': 5, danes: 7, 'blackmar-diemer': 7,
 };
 
 const fenCache = new Map();

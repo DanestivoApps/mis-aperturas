@@ -30,7 +30,8 @@ describe('biblioteca de cursos', () => {
   it('agrupa los cursos por tu primera jugada o la del rival', () => {
     const groupOf = (id) => courseGroup(getCourse(id));
     expect(groupOf('italiana')).toBe('w-e4');
-    expect(groupOf('alien-gambit')).toBe('w-e4');
+    expect(groupOf('alien-gambit')).toBe('g-white');
+    expect(groupOf('stafford')).toBe('g-black');
     expect(groupOf('londres')).toBe('w-d4');
     expect(groupOf('inglesa')).toBe('w-other');
     expect(groupOf('caro-kann')).toBe('b-e4');

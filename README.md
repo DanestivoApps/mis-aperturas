@@ -78,6 +78,10 @@ por lo que decides antes de jugar: con blancas, tu primera jugada; con negras, l
 | Apertura Catalana (contra 1...Cf6 y 1...d5) | Defensa Nimzoindia y Bogoindia (contra 1.d4) |
 | Ataque Indio de Rey (contra 1...e6, 1...c5 y 1...c6) | Defensa Holandesa: Leningrado (contra 1.d4, 1.c4 y 1.Cf3) |
 | Alien Gambit y Martian (contra 1...c6) | 1...e5: Dos Caballos y Berlinesa (contra 1.e4) |
+| Fried Liver y Gambito Evans (contra 1...e5) | Gambito Stafford (contra 1.e4) |
+| Gambito Smith-Morra (contra 1...c5) | Gambito Englund (contra 1.d4) |
+| Gambito Danés (contra 1...e5) | |
+| Gambito Blackmar-Diemer (contra 1...d5) | |
 | | Defensa Pirc (contra 1.e4) |
 | | Defensa Grünfeld (contra 1.d4) |
 
@@ -100,12 +104,13 @@ importar tildes ni mayúsculas) y un botón **▶ Probar** para jugar la línea 
 Los reinicios también se respetan al sincronizar con tus otros dispositivos.
 
 Calidad: los tests comprueban que todas las jugadas son legales, que no hay posiciones sin
-respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 32 cursos
+respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 38 cursos
 (las tuyas y las del rival) se revisaron con Stockfish 19 a profundidad 18, y 20–22 en los casos
 dudosos, y se corrigieron las que perdían ventaja. Las jugadas del rival que son errores graves
-son trampas a propósito y están explicadas. La excepción a propósito son los sacrificios del Alien
-Gambit y del Martian: el motor no los da por buenos, y el propio curso lo avisa. Las afirmaciones
-concretas de los comentarios
+son trampas a propósito y están explicadas. La excepción a propósito son los gambitos de internet
+(Alien, Martian, Stafford, Englund, Danés y Blackmar-Diemer): algunas de sus jugadas clave no son las
+mejores según el motor, y cada curso lo avisa en su introducción. Las afirmaciones concretas de los
+comentarios
 («si ...Dxb2, Db1», etc.) también se comprobaron con el motor. Solo quedan elecciones de
 sistema a menos de medio peón de la mejor jugada (5.d3 contra 3...d6 en la Italiana, 3.c3 y
 3.Af4 en el Londres, y la propia 1...d5 de la Escandinava).

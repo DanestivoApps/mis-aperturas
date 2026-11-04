@@ -24,9 +24,12 @@ const GROUPS = [
   { id: 'b-e4', title: 'Con negras · contra 1.e4' },
   { id: 'b-d4', title: 'Con negras · contra 1.d4' },
   { id: 'b-other', title: 'Con negras · contra otras salidas' },
+  { id: 'g-white', title: 'Gambitos de internet · con blancas' },
+  { id: 'g-black', title: 'Gambitos de internet · con negras' },
 ];
 
 export function courseGroup(course) {
+  if (course.gambit) return course.color === 'white' ? 'g-white' : 'g-black';
   if (course.color === 'white') {
     const first = course.levels[0].match(/^1\. (\S+)/)?.[1];
     return first === 'e4' ? 'w-e4' : first === 'd4' ? 'w-d4' : 'w-other';
