@@ -1863,7 +1863,7 @@ export const COURSES = [
     against: '1...c5',
     tagline: 'Contra la Siciliana: un peón a cambio de desarrollo rápido, columnas abiertas y ataque.',
     intro:
-      'Tras 1.e4 c5 2.d4 cxd4 3.c3 ofreces un peón: si 3...dxc3 4.Cxc3, tienes mucho más desarrollo y las columnas c y d abiertas. El plan es siempre el mismo: Cf3, Ac4, O-O, De2, Td1 y Af4. Las negras tienen que defenderse con cuidado, y las trampas abundan (7.Cd5! o la clavada en f7). Según Stockfish la compensación es casi suficiente: las negras están apenas un poco mejor, así que es un gambito serio. Conoces también lo que hacer si no aceptan, incluida la «trampa siberiana», que debes evitar.',
+      'Tras 1.e4 c5 2.d4 cxd4 3.c3 ofreces un peón: si 3...dxc3 4.Cxc3, tienes mucho más desarrollo y las columnas c y d abiertas. El plan es siempre el mismo: Cf3, Ac4, O-O, De2, Td1 y Af4. Las negras tienen que defenderse con cuidado, y las trampas abundan (6...Ag4? 7.Axf7+! o el sacrificio 8.Cd5!). Según Stockfish la compensación es casi suficiente: las negras están apenas un poco mejor, así que es un gambito serio. Aprendes también qué hacer si no aceptan, incluida la «trampa siberiana», que debes evitar.',
     covers: ['Aceptado: Cc6, d6, Ac4, O-O y De2', 'Contra ...e6: la trampa siberiana', 'Contra ...a6, ...g6 y ...Cf6', 'Trampas: 6...Ag4?, 8.Cd5! y 7.e5', 'Rehusado: 3...Cf6, 3...d5 y 3...d3', '2...e6, 2...d6, 2...Cc6, 2...g6, 2...Cf6 y 2...d5'],
     levels: [
       lines(
@@ -1935,7 +1935,7 @@ export const COURSES = [
     against: '1...e5',
     tagline: 'Dos peones por dos alfiles apuntando al rey negro: 1.e4 e5 2.d4 exd4 3.c3 dxc3 4.Ac4.',
     intro:
-      'Entregas hasta dos peones para colocar los alfiles en c4 y b2, las dos diagonales que miran al enroque enemigo. Las trampas caen solas: 4...Ac5? 5.Axf7+! o 5...f6? 6.Dh5+. Ojo: según Stockfish las negras quedan algo mejor (unas ocho décimas) y, si conocen 5...d5, la partida se iguala con un final. Si prefieres menos riesgo, 4.Cxc3 también es jugable, aunque aquí se enseña el gambito de verdad.',
+      'Entregas hasta dos peones para colocar los alfiles en c4 y b2, las dos diagonales que miran al enroque enemigo. Las trampas caen solas: por ejemplo, 4...Ac5? 5.Axf7+! gana el alfil. Ojo: según Stockfish las negras quedan algo mejor (unas ocho décimas) y, si conocen 5...d5, la partida se iguala con un final. Si prefieres menos riesgo, 4.Cxc3 también es jugable, aunque aquí se enseña el gambito de verdad.',
     covers: ['Doble gambito: 4.Ac4 cxb2 5.Axb2', 'La refutación: 5...d5 6.Axd5 Cf6 7.Axf7+', 'Contra 5...Cf6, 5...d6, 5...Cc6 y 5...Ab4+', 'Trampas: 4...Ac5? y 5...f6?', 'Rehusado: 3...d5, 3...Cf6 y 3...Cc6', '2...d6, 2...Cc6, 2...Cf6 y 2...f5'],
     levels: [
       lines(
