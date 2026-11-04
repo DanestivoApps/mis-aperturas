@@ -4,6 +4,7 @@ import {
   newRepertoire, importPgn, gapKeys, isUserTurn, allLines, pathTo, pathToText, trainableKeys,
 } from '../src/repertoire.js';
 import { toSpanish } from '../src/notation.js';
+import { courseGroup } from '../src/views/library.js';
 
 function build(course, level) {
   const rep = newRepertoire(course.name, course.color);
@@ -24,6 +25,17 @@ describe('biblioteca de cursos', () => {
       expect(c.levels.length).toBeLessThanOrEqual(LEVELS.length);
       expect(getCourse(c.id)).toBe(c);
     }
+  });
+
+  it('agrupa los cursos por tu primera jugada o la del rival', () => {
+    const groupOf = (id) => courseGroup(getCourse(id));
+    expect(groupOf('italiana')).toBe('w-e4');
+    expect(groupOf('alien-gambit')).toBe('w-e4');
+    expect(groupOf('londres')).toBe('w-d4');
+    expect(groupOf('inglesa')).toBe('w-other');
+    expect(groupOf('caro-kann')).toBe('b-e4');
+    expect(groupOf('holandesa')).toBe('b-d4');
+    expect(groupOf('contra-inglesa-reti')).toBe('b-other');
   });
 
   for (const course of COURSES) {
@@ -50,6 +62,14 @@ describe('biblioteca de cursos', () => {
         course.levels.forEach((_, level) => importPgn(stepwise, levelPgn(course, level)));
         const full = build(course, course.levels.length - 1).rep;
         expect(trainableKeys(stepwise).sort()).toEqual(trainableKeys(full).sort());
+      });
+
+      it('todas tus jugadas tienen su explicación', () => {
+        const { rep } = build(course, course.levels.length - 1);
+        const missing = Object.entries(rep.positions)
+          .filter(([key]) => isUserTurn(rep, key))
+          .flatMap(([key, pos]) => pos.moves.filter((m) => !m.comment).map((m) => `${where(rep, key)} → ${m.san}`));
+        expect(missing).toEqual([]);
       });
 
       it('los comentarios no se repiten al ampliar', () => {

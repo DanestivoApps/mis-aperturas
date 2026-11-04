@@ -311,6 +311,14 @@ export function importPgn(rep, text, { own = false } = {}) {
     if (!word) continue;
 
     inMoves = true;
+    // Una jugada que ya está en el repertorio no hace falta validarla otra vez: los cursos repiten
+    // las primeras jugadas en cada línea, y así se importan mucho más rápido.
+    const known = rep.positions[posKey(state.after)]?.moves.find((m) => m.san === word);
+    const reached = known && rep.positions[known.to];
+    if (reached) {
+      state = { before: state.after, after: reached.fen, edge: known };
+      continue;
+    }
     try {
       // Cargar una FEN es lento: solo hace falta al cambiar de variante o de partida.
       if (loaded !== state.after) chess.load(state.after);

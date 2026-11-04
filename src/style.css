@@ -8,6 +8,10 @@
   --accent: #3e8a2e;
   --accent-strong: #2f6d22;
   --accent-text: #ffffff;
+  --accent-ink: #2f6d22;
+  --btn-top: #3a8029;
+  --btn-bottom: #327024;
+  --streak: #b4541a;
   --accent-soft: #e6f2e1;
   --info: #2d62a8;
   --info-soft: #e3edf9;
@@ -15,7 +19,7 @@
   --warn-soft: #fbf0d8;
   --bad: #c0392b;
   --bad-soft: #fbe5e2;
-  --ok: #2f7f2f;
+  --ok: #27702a;
   --ok-soft: #e2f3df;
   --radius: 12px;
   --shadow: 0 1px 2px rgba(31, 29, 26, 0.05), 0 6px 18px rgba(31, 29, 26, 0.06);
@@ -34,6 +38,10 @@
   --accent: #5f9f2c;
   --accent-strong: #457a1d;
   --accent-text: #ffffff;
+  --accent-ink: #9bd07a;
+  --btn-top: #4a8420;
+  --btn-bottom: #3f7319;
+  --streak: #f0934e;
   --accent-soft: #233520;
   --info: #82b3ee;
   --info-soft: #1f2d3e;
@@ -59,6 +67,10 @@
     --accent: #5f9f2c;
     --accent-strong: #457a1d;
     --accent-text: #ffffff;
+    --accent-ink: #9bd07a;
+    --btn-top: #4a8420;
+    --btn-bottom: #3f7319;
+    --streak: #f0934e;
     --accent-soft: #233520;
     --info: #82b3ee;
     --info-soft: #1f2d3e;
@@ -142,7 +154,7 @@ h3 {
 }
 
 .brand-icon {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .nav {
@@ -180,7 +192,7 @@ h3 {
 }
 
 .nav a.on {
-  color: var(--accent);
+  color: var(--accent-ink);
   background: var(--accent-soft);
   font-weight: 600;
 }
@@ -413,7 +425,7 @@ h1 .piece-badge {
 
 .chip.due {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
 }
 
@@ -499,7 +511,7 @@ textarea {
 .seg.on {
   border-color: var(--accent);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
 }
 
@@ -658,7 +670,7 @@ textarea {
 }
 
 .mv.on {
-  background: var(--accent);
+  background: var(--btn-bottom);
   color: var(--accent-text);
 }
 
@@ -705,7 +717,7 @@ textarea {
 
 .tag.mine {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .tag.theirs {
@@ -968,7 +980,7 @@ textarea {
 }
 
 .explorer-table tr.in-rep .ex-move {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .wdl {
@@ -1526,7 +1538,7 @@ details.card > summary {
 }
 
 .level.on strong {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .level.have strong {
@@ -1851,7 +1863,7 @@ h1 {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .today h1 {
@@ -2239,7 +2251,7 @@ h2 {
 h1 .ico {
   margin-right: 8px;
   vertical-align: -3px;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* Barra superior con efecto cristal */
@@ -2297,7 +2309,7 @@ h1 .ico {
 }
 
 .btn.primary {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white), var(--accent));
+  background: linear-gradient(180deg, var(--btn-top), var(--btn-bottom));
   border-color: var(--accent-strong);
   box-shadow: 0 2px 0 var(--accent-strong), 0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent);
 }
@@ -2482,7 +2494,7 @@ textarea:focus {
   align-items: center;
   gap: 6px;
   font-weight: 600;
-  color: #e8772e;
+  color: var(--streak);
 }
 
 .goal-ring {
@@ -2627,7 +2639,7 @@ textarea:focus {
 }
 
 .tile-label .ico {
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .tile-value {
@@ -2648,7 +2660,7 @@ textarea:focus {
 .welcome-icon .ico {
   width: 30px;
   height: 30px;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .welcome-arrow .ico {
@@ -2761,7 +2773,7 @@ textarea:focus {
 .board-controls .moves-toggle[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 @media (max-width: 420px) {
@@ -2777,7 +2789,7 @@ textarea:focus {
 }
 
 .rep-status .due {
-  color: var(--accent);
+  color: var(--accent-ink);
   font-weight: 600;
 }
 
@@ -2824,4 +2836,59 @@ textarea:focus {
 
 .move-rows .icon-btn.danger {
   color: var(--bad);
+}
+
+/* Biblioteca: grupos de cursos */
+.course-group {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 14px 0 0;
+  font-size: 1.05rem;
+}
+
+.course-group:first-child {
+  margin-top: 0;
+}
+
+/* Barra del móvil: las cinco secciones caben siempre, también en pantallas estrechas */
+@media (max-width: 700px) {
+  .nav a {
+    min-width: 0;
+    font-size: clamp(0.62rem, 2.9vw, 0.7rem);
+  }
+
+  .nav a span {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Menú que no cabe hacia abajo: se abre hacia arriba */
+.menu-flip .menu-list {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+/* Tarjetas de la biblioteca en el móvil: los tres botones en una fila */
+@media (max-width: 440px) {
+  .course-card .rep-actions .btn {
+    padding-inline: 10px;
+    white-space: nowrap;
+  }
+
+  .course-card .rep-actions .btn .ico {
+    display: none;
+  }
+}
+
+/* Los botones con textos largos (nombres de repertorio) pasan a dos renglones en el móvil */
+@media (max-width: 700px) {
+  .actions .btn {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
 }

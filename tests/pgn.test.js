@@ -102,6 +102,26 @@ describe('exportar PGN', () => {
     });
   }
 
+  it('al reimportar sigue bien las jugadas ya conocidas', () => {
+    const rep = newRepertoire('r', 'white');
+    importPgn(rep, '1. e4 e5 2. Nf3 *');
+    const { added, errors } = importPgn(rep, '1. e4 {Centro.} e5 2. Nf3 Nc6 3. Bb5 (3. Bc4) 3... a6 *');
+    expect(errors).toEqual([]);
+    expect(added).toBe(4); // Cc6, Ab5, Ac4 y a6: las tres primeras ya estaban
+    expect(rep.positions[ROOT_KEY].moves[0].comment).toBe('Centro.');
+    const copy = newRepertoire('c', 'white');
+    importPgn(copy, '1. e4 {Centro.} e5 2. Nf3 Nc6 3. Bb5 (3. Bc4) 3... a6 *');
+    expect(edgesOf(rep)).toEqual(edgesOf(copy));
+  });
+
+  it('una jugada conocida con otra grafía se sigue aceptando', () => {
+    const rep = newRepertoire('r', 'white');
+    importPgn(rep, '1. e4 e5 2. Nf3 *');
+    const { added, errors } = importPgn(rep, '1.e4! e5?! 2.Nf3 $1 Nc6 *');
+    expect(errors).toEqual([]);
+    expect(added).toBe(1);
+  });
+
   it('no entra en bucle con repeticiones de posición', () => {
     const rep = newRepertoire('r', 'white');
     // Tras 2...Ng8 se repite la posición inicial, así que 3.e4 es una alternativa a 1.Nf3.

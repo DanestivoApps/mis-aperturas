@@ -57,8 +57,9 @@ diario es un anillo de progreso, y al entrenar una fila de puntos marca tus juga
 ### Biblioteca de aperturas
 Cursos listos para añadir, al estilo de Chessreps, con la idea de cada jugada explicada y
 las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **Avanzado**,
-**Completo**) y puedes ampliarlo cuando quieras sin perder tus cambios. Todas tus jugadas del
-nivel Esencial tienen su explicación.
+**Completo**) y puedes ampliarlo cuando quieras sin perder tus cambios. Todas tus jugadas, en
+todos los niveles, tienen su explicación (un test lo comprueba). La biblioteca agrupa los cursos
+por lo que decides antes de jugar: con blancas, tu primera jugada; con negras, la del rival.
 
 | Con blancas | Con negras |
 | --- | --- |
@@ -76,7 +77,7 @@ nivel Esencial tienen su explicación.
 | Apertura Inglesa (1.c4, contra todo) | Siciliana Najdorf (contra 1.e4) |
 | Apertura Catalana (contra 1...Cf6 y 1...d5) | Defensa Nimzoindia y Bogoindia (contra 1.d4) |
 | Ataque Indio de Rey (contra 1...e6, 1...c5 y 1...c6) | Defensa Holandesa: Leningrado (contra 1.d4, 1.c4 y 1.Cf3) |
-| | 1...e5: Dos Caballos y Berlinesa (contra 1.e4) |
+| Alien Gambit y Martian (contra 1...c6) | 1...e5: Dos Caballos y Berlinesa (contra 1.e4) |
 | | Defensa Pirc (contra 1.e4) |
 | | Defensa Grünfeld (contra 1.d4) |
 
@@ -99,10 +100,12 @@ importar tildes ni mayúsculas) y un botón **▶ Probar** para jugar la línea 
 Los reinicios también se respetan al sincronizar con tus otros dispositivos.
 
 Calidad: los tests comprueban que todas las jugadas son legales, que no hay posiciones sin
-respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 31 cursos
+respuesta ni dos jugadas tuyas en la misma posición. Además, todas las jugadas de los 32 cursos
 (las tuyas y las del rival) se revisaron con Stockfish 19 a profundidad 18, y 20–22 en los casos
 dudosos, y se corrigieron las que perdían ventaja. Las jugadas del rival que son errores graves
-son trampas a propósito y están explicadas. Las afirmaciones concretas de los comentarios
+son trampas a propósito y están explicadas. La excepción a propósito son los sacrificios del Alien
+Gambit y del Martian: el motor no los da por buenos, y el propio curso lo avisa. Las afirmaciones
+concretas de los comentarios
 («si ...Dxb2, Db1», etc.) también se comprobaron con el motor. Solo quedan elecciones de
 sistema a menos de medio peón de la mejor jugada (5.d3 contra 3...d6 en la Italiana, 3.c3 y
 3.Af4 en el Londres, y la propia 1...d5 de la Escandinava).
@@ -203,7 +206,8 @@ La evaluación y la importación de estudios públicos funcionan sin token.
 | `src/chart.js` | Gráfico de columnas de las estadísticas |
 | `src/views/*.js` | Pantallas: inicio, biblioteca, editor, entrenamiento, contrarreloj, partidas, estadísticas, ajustes |
 | `scripts/build-openings.mjs` | Regenera `openings.json` desde los TSV de lichess-org/chess-openings |
-| `public/` | Manifiesto, iconos y service worker (app instalable y sin conexión) |
+| `public/` | Manifiesto e iconos (app instalable) |
+| `src/sw.template.js`, `src/pwa.js` | Service worker (sin conexión; `vite.config.js` le añade los archivos de cada publicación) y aviso de versión nueva |
 | `tests/` | Tests con Vitest |
 
 Librerías: [chess.js](https://github.com/jhlywa/chess.js) para las reglas y

@@ -23,7 +23,7 @@ export function fill(el, ...children) {
 
 let toastTimer;
 // Aviso flotante. Con `action` ({ label, onClick }) muestra un botón, p. ej. "Deshacer".
-export function toast(message, kind = 'info', action = null) {
+export function toast(message, kind = 'info', action = null, { duration = action ? 7000 : 2600 } = {}) {
   let el = document.getElementById('toast');
   if (!el) {
     el = h('div', { id: 'toast', role: 'status' });
@@ -46,7 +46,7 @@ export function toast(message, kind = 'info', action = null) {
   el.classList.add('show');
   el.classList.toggle('has-action', Boolean(action));
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(hide, action ? 7000 : 2600);
+  toastTimer = setTimeout(hide, duration);
 }
 
 export function download(filename, text, mime = 'text/plain') {
@@ -109,5 +109,25 @@ export function dropdown(summary, items, { label = 'Más opciones', className = 
     }),
   );
   details.append(h('summary', { class: 'menu-btn', 'aria-label': label, title: label }, summary), list);
+  details.addEventListener('toggle', () => {
+    if (details.open) fitMenu(details, list);
+  });
   return details;
+}
+
+// Coloca el menú abierto dentro de la pantalla: lo abre hacia arriba o lo desplaza a un lado si no cabe.
+function fitMenu(details, list) {
+  const margin = 8;
+  list.style.transform = '';
+  details.classList.remove('menu-flip');
+  // En el móvil, la barra de abajo tapa el final de la pantalla.
+  const barHeight = document.querySelector('.nav')?.getBoundingClientRect().top > innerHeight / 2 ? 76 : margin;
+  let box = list.getBoundingClientRect();
+  if (box.bottom > innerHeight - barHeight && details.getBoundingClientRect().top - box.height > margin) {
+    details.classList.add('menu-flip');
+    box = list.getBoundingClientRect();
+  }
+  const width = document.documentElement.clientWidth;
+  const shift = box.right > width - margin ? width - margin - box.right : box.left < margin ? margin - box.left : 0;
+  if (shift) list.style.transform = `translateX(${shift}px)`;
 }

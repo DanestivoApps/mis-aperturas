@@ -13,6 +13,13 @@ beforeEach(async () => {
 });
 
 describe('cursos de la biblioteca', () => {
+  it('un nivel fuera de rango usa el más cercano', () => {
+    const course = library.getCourse('caro-kann');
+    const last = course.levels.length - 1;
+    expect(courses.levelEdges(course, 99)).toBe(courses.levelEdges(course, last));
+    expect(courses.levelEdges(course, -1)).toBe(courses.levelEdges(course, 0));
+  });
+
   it('añade un curso al nivel elegido y lo recuerda', () => {
     const course = library.getCourse('caro-kann');
     expect(courses.ownedFrom('caro-kann')).toBeUndefined();

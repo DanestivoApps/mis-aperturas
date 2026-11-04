@@ -1,7 +1,7 @@
 // Añadir cursos de la biblioteca a tu colección, ampliarlos y actualizarlos.
 import { getData, addRepertoire, save } from './store.js';
 import { newRepertoire, importPgn, allLines, trainableKeys, deleteMove, resetKeys } from './repertoire.js';
-import { getCourse, coursePgn } from './library.js';
+import { getCourse, coursePgn, levelPgn } from './library.js';
 
 // Huella del contenido del curso: si cambia (correcciones, líneas nuevas), hay actualización.
 export function courseVersion(course) {
@@ -125,20 +125,19 @@ export function updateCourse(rep) {
   return rebuildCourse(rep, rep.source.level);
 }
 
-// Datos de cada nivel (acumulado: Avanzado incluye Esencial), calculados una vez.
+// Datos de cada nivel (acumulado: Avanzado incluye Esencial), calculados una vez:
+// cada nivel se construye sobre el anterior.
 const levelCache = new Map();
 function levelData(course, level) {
-  const id = `${course.id}|${level}`;
-  if (!levelCache.has(id)) {
+  if (!levelCache.has(course.id)) {
     const rep = newRepertoire(course.name, course.color);
-    importPgn(rep, coursePgn(course, level));
-    const edges = new Set(
-      Object.entries(rep.positions).flatMap(([key, pos]) => pos.moves.map((m) => `${key}|${m.uci}`)),
-    );
-    const keys = new Set(trainableKeys(rep));
-    levelCache.set(id, { edges, keys, lines: allLines(rep).length, positions: keys.size });
+    levelCache.set(course.id, course.levels.map((_, i) => {
+      importPgn(rep, levelPgn(course, i));
+      const keys = new Set(trainableKeys(rep));
+      return { edges: edgeIds(rep), keys, lines: allLines(rep).length, positions: keys.size };
+    }));
   }
-  return levelCache.get(id);
+  return levelCache.get(course.id)[Math.min(Math.max(level, 0), course.levels.length - 1)];
 }
 
 export function levelStats(course) {

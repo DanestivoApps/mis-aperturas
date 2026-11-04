@@ -8,6 +8,10 @@ export function loadOpenings() {
   loading ??= import('./data/openings.json').then((mod) => {
     table = mod.default;
     return table;
+  }).catch(() => {
+    // Sin conexión o tras publicarse otra versión: la app sigue, solo sin el nombre de la apertura.
+    loading = null;
+    return null;
   });
   return loading;
 }

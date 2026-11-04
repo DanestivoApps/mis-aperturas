@@ -16,6 +16,7 @@ import { renderGames } from './views/games.js';
 import { renderLibrary } from './views/library.js';
 import { renderDrill } from './views/drill.js';
 import { applyTheme } from './theme.js';
+import { startPwa } from './pwa.js';
 
 const app = document.getElementById('app');
 let cleanup = null;
@@ -45,6 +46,8 @@ const routes = [
   [/^/, (el) => renderHome(el)],
 ];
 
+const TITLES = { biblioteca: 'Biblioteca', estadisticas: 'Progreso', partidas: 'Partidas', ajustes: 'Ajustes' };
+
 function route() {
   cleanup?.();
   cleanup = null;
@@ -67,6 +70,7 @@ function route() {
     ? 'biblioteca'
     : ['biblioteca', 'estadisticas', 'partidas', 'ajustes'].find((s) => path.startsWith(`#/${s}`)) ?? 'home';
   document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('on', a.dataset.section === section));
+  document.title = TITLES[section] ? `${TITLES[section]} · Mis Aperturas` : 'Mis Aperturas';
   window.scrollTo(0, 0);
 }
 
@@ -94,6 +98,4 @@ startAutoSync(() => {
 });
 
 // En la versión publicada, la app se puede instalar y usar sin conexión.
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
-}
+if (import.meta.env.PROD && 'serviceWorker' in navigator) startPwa();

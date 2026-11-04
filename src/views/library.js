@@ -12,7 +12,32 @@ const FILTERS = [
   { id: 'all', label: 'Todos' },
   { id: 'white', label: '♔ Blancas' },
   { id: 'black', label: '♚ Negras' },
+  { id: 'mine', label: 'Míos' },
 ];
+
+// Los cursos se agrupan por lo que decides antes de empezar la partida:
+// con blancas, tu primera jugada; con negras, la del rival.
+const GROUPS = [
+  { id: 'w-e4', title: 'Con blancas · empiezas 1.e4' },
+  { id: 'w-d4', title: 'Con blancas · empiezas 1.d4' },
+  { id: 'w-other', title: 'Con blancas · otras salidas' },
+  { id: 'b-e4', title: 'Con negras · contra 1.e4' },
+  { id: 'b-d4', title: 'Con negras · contra 1.d4' },
+  { id: 'b-other', title: 'Con negras · contra otras salidas' },
+];
+
+export function courseGroup(course) {
+  if (course.color === 'white') {
+    const first = course.levels[0].match(/^1\. (\S+)/)?.[1];
+    return first === 'e4' ? 'w-e4' : first === 'd4' ? 'w-d4' : 'w-other';
+  }
+  return course.against.startsWith('1.e4') ? 'b-e4' : course.against.startsWith('1.d4') ? 'b-d4' : 'b-other';
+}
+
+function passesFilter(course) {
+  if (filter === 'mine') return Boolean(ownedFrom(course.id));
+  return filter === 'all' || course.color === filter;
+}
 
 let filter = 'all';
 let query = '';
@@ -28,6 +53,8 @@ export function matches(course, q) {
 }
 
 export function renderLibrary(root) {
+  let alive = true;
+  let drawing = 0; // cada dibujo de la cuadrícula anula las tandas pendientes del anterior
   const grid = h('div', { class: 'course-grid' });
   const filterBtns = FILTERS.map((f) =>
     h('button', {
@@ -66,9 +93,33 @@ export function renderLibrary(root) {
     ),
   );
 
-  function renderGrid() {
-    const list = COURSES.filter((c) => (filter === 'all' || c.color === filter) && matches(c, query));
-    fill(grid, list.length ? list.map(courseCard) : h('p', { class: 'muted' }, 'No hay cursos que coincidan con la búsqueda.'));
+  function groupHeading(group, count) {
+    return h('h2', { class: 'course-group' }, group.title, h('span', { class: 'muted small' }, String(count)));
+  }
+
+  // `inBatches`: al abrir la pantalla, las tarjetas aparecen por tandas para que no se quede congelada.
+  function renderGrid(inBatches = false) {
+    const list = COURSES.filter((c) => passesFilter(c) && matches(c, query));
+    drawing++;
+    if (!list.length) {
+      const text = filter === 'mine' && !query.trim()
+        ? 'Aún no has añadido ningún curso: elige uno en «Todos».'
+        : 'No hay cursos que coincidan con la búsqueda.';
+      return fill(grid, h('p', { class: 'muted' }, text));
+    }
+    const items = GROUPS.flatMap((group) => {
+      const courses = list.filter((c) => courseGroup(c) === group.id);
+      return courses.length ? [() => groupHeading(group, courses.length), ...courses.map((c) => () => courseCard(c))] : [];
+    });
+    if (!inBatches) return fill(grid, items.map((make) => make()));
+    fill(grid);
+    const current = drawing;
+    const addBatch = (start) => {
+      if (!alive || current !== drawing) return;
+      grid.append(...items.slice(start, start + 6).map((make) => make()));
+      if (start + 6 < items.length) setTimeout(() => addBatch(start + 6), 0);
+    };
+    addBatch(0);
   }
 
   function courseCard(course) {
@@ -242,5 +293,8 @@ export function renderLibrary(root) {
     );
   }
 
-  renderGrid();
+  renderGrid(true);
+  return () => {
+    alive = false;
+  };
 }

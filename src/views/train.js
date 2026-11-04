@@ -118,7 +118,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const counters = h('div', { class: 'chips' });
   const summary = h('div', { class: 'train-summary' });
   const [modeName, modeHelp] = previewAll
-    ? ['Práctica del curso', `Todas las líneas del nivel ${LEVELS[previewLevel].name}: cada jugada nueva se enseña primero. No se añade a tus repertorios.`]
+    ? ['Práctica', `Todas las líneas del nivel ${LEVELS[previewLevel].name}: cada jugada nueva se enseña primero. No se añade a tus repertorios.`]
     : MODES[modo];
   const modeText = h('span', { class: 'chip mode-chip', title: modeHelp },
     modeName, prefix.length ? ' · desde la posición elegida' : '');
@@ -220,7 +220,11 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
         h('span', { class: `chip ${s.due ? 'due' : ''}` }, `${s.due} para repasar`),
         h('span', { class: 'chip' }, `${Math.min(s.fresh, Math.max(session.newBudget, 0))} nuevas`),
       ];
-    } else progress = h('span', { class: 'chip' }, `Línea ${session.lines + (cur ? 1 : 0)} · quedan ${session.queue.length}`);
+    } else {
+      const playing = cur && cur.idx < cur.line.length ? 1 : 0;
+      progress = h('span', { class: 'chip', title: 'Línea actual y total de esta sesión' },
+        `Línea ${Math.max(session.lines + playing, 1)}/${session.lines + playing + session.queue.length}`);
+    }
     fill(counters,
       progress,
       h('span', { class: 'chip ok' }, `✓ ${session.correct}`),
