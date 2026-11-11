@@ -169,7 +169,12 @@ export function renderGames(root) {
                 ),
                 h('div', { class: 'muted small' }, describe(r)),
               ),
-              link ? h('a', { class: 'btn ghost', href: link, target: '_blank', rel: 'noopener' }, 'Ver ↗') : null,
+              h('div', { class: 'game-actions' },
+                r.color && r.game.sans.length > 1 && !['otra-variante', 'error'].includes(r.outcome)
+                  ? h('button', { class: 'btn', title: 'Stockfish valora cada jugada y te dice qué había que jugar', onClick: () => openReview(r, link) }, 'Revisar')
+                  : null,
+                link ? h('a', { class: 'btn ghost', href: link, target: '_blank', rel: 'noopener' }, 'Ver ↗') : null,
+              ),
             );
           }),
         ),
@@ -179,6 +184,35 @@ export function renderGames(root) {
 
   renderForm();
   renderResults();
+}
+
+// Partida que se está revisando (también en sessionStorage, para sobrevivir a recargar la página).
+const REVIEW_KEY = 'mis-aperturas.revisar';
+let reviewing = null;
+
+function openReview(r, link) {
+  const hd = r.game.headers;
+  reviewing = {
+    sans: r.game.sans,
+    color: r.color,
+    link,
+    title: `${r.color === 'white' ? '♔' : '♚'} vs ${r.opponent ?? '?'} · ${(hd.Date ?? hd.UTCDate ?? '').replace(/\./g, '/')} · ${hd.Result ?? ''}`,
+  };
+  try {
+    sessionStorage.setItem(REVIEW_KEY, JSON.stringify(reviewing));
+  } catch {
+    // Sin almacenamiento: vale con la memoria.
+  }
+  location.hash = '#/revisar';
+}
+
+export function reviewGame() {
+  if (reviewing) return reviewing;
+  try {
+    return JSON.parse(sessionStorage.getItem(REVIEW_KEY)) ?? { sans: [], color: 'white' };
+  } catch {
+    return { sans: [], color: 'white' };
+  }
 }
 
 function tile(label, value, sub) {

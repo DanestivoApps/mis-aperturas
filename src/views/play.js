@@ -11,17 +11,26 @@ import { START_FEN } from '../repertoire.js';
 import { icon } from '../icons.js';
 import { VERDICTS, moveLoss, verdict, formatEval, accuracy } from '../game-review.js';
 
-export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
+// Con `game` ({ sans, color, title, link }) no se juega: se revisa una partida tuya ya jugada.
+export function renderPlay(root, { fen = START_FEN, color = 'white', game = null }) {
   let chess;
   try {
-    chess = new Chess(fen);
+    chess = new Chess(game ? START_FEN : fen);
   } catch {
     chess = new Chess();
   }
   const startFen = chess.fen();
+  if (game) color = game.color;
   let alive = true;
   let level = getSettings().engineLevel ?? 'medio';
   const played = []; // jugadas de la partida (objetos de chess.js, con before/after)
+  for (const s of game?.sans ?? []) {
+    try {
+      played.push(chess.move(s));
+    } catch {
+      break;
+    }
+  }
   let review = null; // { evals, moves, selected } mientras revisas
   let reviewToken = 0;
 
@@ -50,17 +59,19 @@ export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
   root.append(h('section', { class: 'layout with-head' },
     h('div', { class: 'panel-head' },
       h('div', { class: 'head-links' }, h('a', { href: '#', class: 'back', onClick: (e) => { e.preventDefault(); window.history.back(); } }, '← Volver')),
-      h('h1', null, 'Juega contra el motor'),
-      h('p', { class: 'muted small' }, 'Sigue la partida desde donde acaba tu línea y luego revísala: verás qué jugadas fueron buenas y qué había que jugar.'),
+      h('h1', null, game ? 'Revisión de tu partida' : 'Juega contra el motor'),
+      game
+        ? h('p', { class: 'muted small' }, game.title ?? '', game.link ? [' · ', h('a', { href: game.link, target: '_blank', rel: 'noopener' }, 'Ver en Chess.com ↗')] : null)
+        : h('p', { class: 'muted small' }, 'Sigue la partida desde donde acaba tu línea y luego revísala: verás qué jugadas fueron buenas y qué había que jugar.'),
     ),
     h('div', { class: 'board-col' },
       boardEl,
       h('div', { class: 'board-controls' },
         nav.back,
         nav.forward,
-        h('button', { class: 'icon-btn', title: 'Deshacer tu última jugada', onClick: undo }, '↶'),
+        game ? null : h('button', { class: 'icon-btn', title: 'Deshacer tu última jugada', onClick: undo }, '↶'),
         h('button', { class: 'icon-btn', title: 'Girar el tablero', onClick: () => board.toggleOrientation() }, '⟲'),
-        h('button', { class: 'icon-btn', title: 'Empezar de nuevo desde la posición de partida', onClick: restart }, '⏮'),
+        game ? null : h('button', { class: 'icon-btn', title: 'Empezar de nuevo desde la posición de partida', onClick: restart }, '⏮'),
       ),
     ),
     h('div', { class: 'panel' },
@@ -115,7 +126,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
           class: `mv ${review?.selected === i ? 'on' : ''} ${v ? `v-${v.kind}` : ''}`,
           disabled: !review,
           onClick: () => select(i),
-        }, san(m.san), v && info.mine && info.verdict !== 'buena' ? h('sup', null, v.symbol) : null),
+        }, san(m.san), v && (info.mine ? info.verdict !== 'buena' : ['error', 'grave'].includes(info.verdict)) ? h('sup', null, v.symbol) : null),
       ];
     }));
   }
@@ -188,7 +199,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
     const token = ++reviewToken;
     review = { evals: [], moves: [], selected: null };
     reviewBtn.hidden = true;
-    resumeBtn.hidden = false;
+    resumeBtn.hidden = Boolean(game);
     levelCard.hidden = true;
     say('Revisión: pulsa una jugada de la lista o usa ◀ ▶ (flechas del teclado).', 'info');
     sync();
@@ -204,7 +215,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
       else if (pos.isGameOver()) result = { cp: 0, best: null };
       else {
         try {
-          result = await analyse(fens[i]);
+          result = await analyse(fens[i], fens.length > 70 ? 11 : 13);
         } catch (err) {
           fill(reviewEl, h('p', { class: 'notice warn' }, err.message || 'No se pudo usar el motor.'));
           return;
@@ -291,10 +302,10 @@ export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
     if (info.best && info.verdict !== 'mejor') shapes.push(arrow(info.best, 'blue'));
     board.setAutoShapes(shapes);
 
-    const who = info.mine ? 'Tu jugada' : 'El motor';
+    const who = info.mine ? 'Tu jugada' : game ? 'La jugada del rival' : 'El motor';
     fill(reviewEl,
       h('div', { class: `card review-move v-${v.kind}` },
-        h('p', { class: 'review-title' }, h('strong', null, `${moveLabel(idx)} ${san(m.san)}`), ` · ${info.mine ? v.label : 'jugada del motor'}`),
+        h('p', { class: 'review-title' }, h('strong', null, `${moveLabel(idx)} ${san(m.san)}`), ` · ${info.mine ? v.label : game ? `del rival · ${v.label.toLowerCase()}` : 'jugada del motor'}`),
         info.verdict === 'mejor'
           ? h('p', null, `${who} es la mejor de la posición. Evaluación: ${evalAfter}.`)
           : h('p', null,
@@ -327,7 +338,8 @@ export function renderPlay(root, { fen = START_FEN, color = 'white' }) {
 
   sync();
   nav.back.disabled = nav.forward.disabled = true;
-  if (colorToMove(chess) !== color) engineTurn();
+  if (game) startReview();
+  else if (colorToMove(chess) !== color) engineTurn();
   else say('Tu turno: sigue la partida.');
 
   return () => {

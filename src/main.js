@@ -17,6 +17,7 @@ import { renderLibrary } from './views/library.js';
 import { renderDrill } from './views/drill.js';
 import { renderPlan } from './views/plan.js';
 import { renderPlay } from './views/play.js';
+import { reviewGame } from './views/games.js';
 import { applyTheme } from './theme.js';
 import { startPwa } from './pwa.js';
 
@@ -40,6 +41,7 @@ const routes = [
       todas: query.get('lineas') === 'todas',
       trampas: query.get('trampas') === '1',
     })],
+  [/^#\/revisar/, (el) => renderPlay(el, { game: reviewGame() })],
   [/^#\/jugar/, (el, match, query) => renderPlay(el, { fen: query.get('fen') ?? undefined, color: query.get('color') === 'black' ? 'black' : 'white' })],
   [/^#\/plan/, (el) => renderPlan(el)],
   [/^#\/contrarreloj\/([^/?]+)/, (el, match, query) =>
@@ -69,10 +71,11 @@ function route() {
     }
   }
   // Pantallas de tablero (entrenar, editar...): en el móvil se ocultan las barras para dar sitio.
-  document.body.classList.toggle('focus', /^#\/(entrenar|editar|probar|contrarreloj|jugar)/.test(path));
+  document.body.classList.toggle('focus', /^#\/(entrenar|editar|probar|contrarreloj|jugar|revisar)/.test(path));
   // Marca la sección activa en la barra superior.
   const section = path.startsWith('#/probar')
     ? 'biblioteca'
+    : path.startsWith('#/revisar') ? 'partidas'
     : ['biblioteca', 'estadisticas', 'partidas', 'ajustes', 'plan'].find((s) => path.startsWith(`#/${s}`)) ?? 'home';
   document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('on', a.dataset.section === section));
   document.title = TITLES[section] ? `${TITLES[section]} · Mis Aperturas` : 'Mis Aperturas';

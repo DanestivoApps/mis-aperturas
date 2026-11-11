@@ -3067,3 +3067,4 @@ textarea:focus {
 .suggest-head .ellipsis { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .suggest-move { font-size: 1.1rem; }
 .suggest-idea { margin: 6px 0 8px; line-height: 1.45; }
+.game-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
