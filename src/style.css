@@ -3007,3 +3007,34 @@ textarea:focus {
 .ideas-card p {
   margin: 8px 0;
 }
+
+/* ---------- Revisión de la partida contra el motor ---------- */
+.play-moves { line-height: 2; }
+.play-moves .mv-num { color: var(--muted); margin-left: 4px; }
+.play-moves button.mv {
+  font: inherit; background: none; border: 0; border-radius: 6px; padding: 1px 4px; color: var(--text); cursor: pointer;
+}
+.play-moves button.mv:disabled { cursor: default; }
+.play-moves button.mv.on { background: var(--info-soft); outline: 1px solid var(--info); }
+.play-moves .mv sup { font-weight: 700; margin-left: 1px; }
+.play-moves .v-ok sup { color: var(--ok); }
+.play-moves .v-warn sup { color: var(--warn); }
+.play-moves .v-bad sup { color: var(--bad); }
+.play-moves .v-bad { color: var(--bad); }
+.review { display: grid; gap: 12px; }
+.review:empty { display: none; }
+.review-move { border-left: 4px solid var(--border); }
+.review-move.v-ok { border-left-color: var(--ok); }
+.review-move.v-warn { border-left-color: var(--warn); }
+.review-move.v-bad { border-left-color: var(--bad); }
+.review-move p { margin: 0 0 6px; }
+.review-title strong { font-size: 1.05rem; }
+.review-summary { display: grid; gap: 10px; }
+.review-accuracy { display: flex; align-items: baseline; gap: 8px; }
+.review-accuracy strong { font-size: 2rem; line-height: 1; }
+.review-counts { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 4px 12px; }
+.review-counts li { display: flex; justify-content: space-between; gap: 8px; }
+.review-counts li.v-ok span { color: var(--ok); }
+.review-counts li.v-warn span { color: var(--warn); }
+.review-counts li.v-bad span { color: var(--bad); }
+.review-jumps p { margin: 0; }
