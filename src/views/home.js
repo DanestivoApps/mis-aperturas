@@ -4,6 +4,7 @@ import { getData, addRepertoire, removeRepertoire, save, streak, todayCount, upd
 import { newRepertoire, exportPgn, repStats, weakKeys, resetProgress, allLines } from '../repertoire.js';
 import { coverageGaps, gameActions, trapExercises } from '../insights.js';
 import { actionList } from './actions.js';
+import { puzzleCount } from './tactics.js';
 import { loadReport, refreshReport } from '../partidas.js';
 import { describeDue } from '../srs.js';
 import { LEVELS, COURSES, getCourse } from '../library.js';
@@ -255,6 +256,7 @@ function repMenu(rep, s) {
     weak ? { label: `Repasar mis errores (${weak})`, href: `#/entrenar/${rep.id}?modo=errores` } : null,
     s.total ? { label: 'Contrarreloj', href: `#/contrarreloj/${rep.id}` } : null,
     trapCount(rep) ? { label: `Trampas (${trapCount(rep)})`, href: `#/entrenar/${rep.id}?modo=trampas`, title: 'El rival se equivoca: encuentra cómo castigarlo' } : null,
+    puzzleCount(rep.source?.course) ? { label: `Tácticas (${puzzleCount(rep.source.course)})`, href: `#/tacticas/${rep.source.course}`, title: 'Problemas de partidas reales con esta apertura' } : null,
     { label: 'Editar jugadas', href: `#/editar/${rep.id}` },
     'sep',
     { label: 'Renombrar', onClick: () => renameRep(rep) },

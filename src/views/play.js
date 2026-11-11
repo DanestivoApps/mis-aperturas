@@ -9,7 +9,7 @@ import { playMove } from '../sound.js';
 import { san } from '../notation.js';
 import { START_FEN } from '../repertoire.js';
 import { icon } from '../icons.js';
-import { VERDICTS, moveLoss, verdict, formatEval, accuracy, scoreValue } from '../game-review.js';
+import { VERDICTS, moveLoss, winDrop, winPercent, verdict, formatEval, accuracy, scoreValue } from '../game-review.js';
 
 // Con `game` ({ sans, color, title, link }) no se juega: se revisa una partida tuya ya jugada.
 export function renderPlay(root, { fen = START_FEN, color = 'white', game = null }) {
@@ -230,7 +230,9 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
       const after = review.evals[i + 1];
       const isBest = before.best === m.from + m.to + (m.promotion ?? '');
       const loss = moveLoss(before, after);
-      return { loss, verdict: verdict(loss, isBest), mine: m.color === color[0], best: before.best, pv: before.pv ?? [] };
+      const drop = winDrop(before, after);
+      const chances = [winPercent(before), 100 - winPercent(after)].map(Math.round);
+      return { loss, drop, chances, verdict: verdict(drop, isBest), mine: m.color === color[0], best: before.best, pv: before.pv ?? [] };
     });
     renderSummary();
     // Empieza por tu primer error, si lo hay.
@@ -257,7 +259,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
     const count = (id) => mine.filter((x) => x.verdict === id).length;
     review.summary = h('div', { class: 'card review-summary' },
       h('div', { class: 'review-accuracy' },
-        h('strong', null, `${accuracy(mine.map((x) => x.loss))}%`),
+        h('strong', null, `${accuracy(mine.map((x) => x.drop))}%`),
         h('span', { class: 'muted small' }, 'de precisión'),
       ),
       h('ul', { class: 'review-counts' }, Object.entries(VERDICTS).map(([id, v]) =>
@@ -325,7 +327,8 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
         info.verdict === 'mejor'
           ? h('p', null, `${who} es la mejor de la posición. Evaluación: ${evalAfter}.`)
           : h('p', null,
-              `${who} pierde ${(info.loss / 100).toFixed(1).replace('.', ',')} ${info.loss >= 95 && info.loss < 105 ? 'peón' : 'peones'}. `,
+              info.loss >= 20 ? `${who} pierde ${(info.loss / 100).toFixed(1).replace('.', ',')} ${info.loss >= 95 && info.loss < 105 ? 'peón' : 'peones'} de ventaja. ` : `${who} no es la más precisa. `,
+              info.chances[0] !== info.chances[1] ? `Opciones de ganar: ${info.chances[0]}% → ${info.chances[1]}%. ` : '',
               'Mejor era ', h('strong', null, san(bestSan ?? '?')), ` (flecha azul, evaluación ${evalBest}).`),
         line.length > 1 && info.verdict !== 'mejor'
           ? h('p', { class: 'muted small' }, 'Idea: ', line.map(san).join(' '))

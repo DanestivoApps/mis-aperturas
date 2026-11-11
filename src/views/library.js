@@ -3,6 +3,7 @@ import { h, fill, toast, dropdown } from '../dom.js';
 import { icon } from '../icons.js';
 import { COURSES, LEVELS } from '../library.js';
 import { miniBoard, courseFen } from '../miniboard.js';
+import { puzzleCount } from './tactics.js';
 import {
   ownedFrom, addCourse, expandCourse, updateCourse, updateMessage, isOutdated, levelStats, levelProgress,
   relearnLevel, repSnapshot, restoreSnapshot,
@@ -196,6 +197,7 @@ export function renderLibrary(root, { q = null } = {}) {
           dropdown('⋯', [
             { label: 'Probar solo la línea principal', href: `#/probar/${course.id}`, title: 'Con flechas y explicaciones, y después sin ayuda' },
             { label: 'Trampas del curso', href: `#/probar/${course.id}?trampas=1`, title: 'El rival se equivoca: encuentra cómo castigarlo' },
+            puzzleCount(course.id) ? { label: `Tácticas (${puzzleCount(course.id)})`, href: `#/tacticas/${course.id}`, title: 'Problemas de partidas reales con esta apertura' } : null,
           ], { label: `Más opciones de ${course.name}` }),
         );
         return;
@@ -251,6 +253,7 @@ export function renderLibrary(root, { q = null } = {}) {
           },
           { label: 'Contrarreloj', href: `#/contrarreloj/${owned.id}?nivel=${level}` },
           { label: 'Trampas', href: `#/entrenar/${owned.id}?modo=trampas`, title: 'El rival se equivoca: encuentra cómo castigarlo' },
+          puzzleCount(course.id) ? { label: `Tácticas (${puzzleCount(course.id)})`, href: `#/tacticas/${course.id}`, title: 'Problemas de partidas reales con esta apertura' } : null,
           { label: 'Ver jugadas', href: `#/editar/${owned.id}` },
         ], { label: `Más opciones de ${course.name}` }),
       );

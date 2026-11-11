@@ -64,7 +64,12 @@ diario es un anillo de progreso, y al entrenar una fila de puntos marca tus juga
   biblioteca (con su explicación) y las tres mejores de Stockfish. Con un clic usas esa jugada o copias toda la
   línea del curso desde ahí, con sus comentarios.
 - **Revisar la partida contra el motor**: cada jugada valorada (la mejor, buena, imprecisión, error, error grave),
-  tu precisión y qué había que jugar en cada caso.
+  tu precisión y qué había que jugar en cada caso. Los errores se miden como en Lichess: por lo que baja tu
+  probabilidad de ganar (perder 2 peones yendo +8 no es un error; con la partida igualada, sí). También puedes
+  revisar así tus partidas de Chess.com, Lichess o PGN desde Partidas, con barra de evaluación.
+- **Tácticas de tus aperturas**: unos 220 problemas por curso sacados de partidas reales jugadas con esa
+  apertura (base de datos de problemas de Lichess), de todas las dificultades. La app lleva tu nivel (tipo Elo)
+  y te da problemas cercanos a él; los que fallas vuelven a salir. En el menú de cada curso: «Tácticas».
 - **Plan de repertorio** (`#/plan`): eliges con qué abres y si te gusta jugar sólido o al ataque, y te propone
   los cursos justos para no tener huecos. El inicio avisa de las salidas que aún no tienes preparadas.
 - **Trampas**: ejercicios que empiezan en un error del rival; tienes que encontrar cómo castigarlo.
@@ -228,6 +233,7 @@ La evaluación y la importación de estudios públicos funcionan sin token.
 | `src/chart.js` | Gráfico de columnas de las estadísticas |
 | `src/views/*.js` | Pantallas: inicio, biblioteca, editor, entrenamiento, contrarreloj, partidas, estadísticas, ajustes |
 | `scripts/build-openings.mjs` | Regenera `openings.json` desde los TSV de lichess-org/chess-openings |
+| `scripts/build-puzzles.mjs` | Regenera `public/puzzles/*.json` (problemas por curso) desde la base de datos de problemas de Lichess |
 | `public/` | Manifiesto e iconos (app instalable) |
 | `src/sw.template.js`, `src/pwa.js` | Service worker (sin conexión; `vite.config.js` le añade los archivos de cada publicación) y aviso de versión nueva |
 | `tests/` | Tests con Vitest |
@@ -235,6 +241,8 @@ La evaluación y la importación de estudios públicos funcionan sin token.
 Librerías: [chess.js](https://github.com/jhlywa/chess.js) para las reglas y
 [chessground](https://github.com/lichess-org/chessground) (el tablero de Lichess, licencia GPL-3.0).
 Nombres de aperturas: [lichess-org/chess-openings](https://github.com/lichess-org/chess-openings) (CC0).
+Problemas de táctica: [base de datos de problemas de Lichess](https://database.lichess.org/#puzzles) (CC0).
+Motor: [Stockfish](https://github.com/official-stockfish/Stockfish) (GPL-3.0). Fórmulas de precisión y de probabilidad de ganar: las de [Lichess](https://github.com/lichess-org/lila).
 
 ## Licencia
 
