@@ -4,7 +4,7 @@ import { Chess } from 'chess.js';
 import { posKey, ROOT_KEY, isUserTurn, allLines } from './repertoire.js';
 import { moveFromUci } from './chess-utils.js';
 import { COURSES } from './library.js';
-import { levelKeys } from './courses.js';
+import { levelKeys, levelEdges } from './courses.js';
 import { lineId } from './session.js';
 
 // Respuestas habituales a cada primera jugada, para buscar huecos y montar el plan.
@@ -108,7 +108,16 @@ export function buildPlan({ first = 'e4', style = 'solido', owned = new Set(), w
 
 // Resumen compacto del análisis de tus partidas (se guarda para el inicio y el repaso).
 export function buildReport(analysis, { username = '', source = 'chesscom', now = Date.now() } = {}) {
-  const relevant = analysis.filter((r) => !['no-jugador', 'otra-variante', 'error'].includes(r.outcome));
+  const relevant = analysis.filter((r) => !['no-jugador', 'otra-variante', 'error', 'sin-repertorio', 'otra-apertura'].includes(r.outcome));
+  // Primera jugada de cada partida (la tuya con blancas, la del rival con negras), tengas repertorio o no.
+  const openings = { white: {}, black: {} };
+  const played = { white: 0, black: 0 };
+  for (const r of analysis) {
+    if (!r.color || ['no-jugador', 'otra-variante', 'error'].includes(r.outcome) || !r.game.sans.length) continue;
+    played[r.color]++;
+    const first = r.game.sans[0];
+    openings[r.color][first] = (openings[r.color][first] ?? 0) + 1;
+  }
   const positions = {};
   const firstMoves = { white: {}, black: {} };
   const games = { white: 0, black: 0 };
@@ -148,6 +157,8 @@ export function buildReport(analysis, { username = '', source = 'chesscom', now 
     username,
     source,
     analyzed: relevant.length,
+    openings,
+    played,
     averageBook: inBook.length ? inBook.reduce((n, r) => n + r.ply, 0) / inBook.length : 0,
     counts,
     games,
@@ -179,6 +190,77 @@ export function recommendations(report, reps) {
     }
   }
   return out.filter((r) => r.count >= 2 || r.count / Math.max(r.total, 1) >= 0.2).sort((a, b) => b.count - a.count).slice(0, 4);
+}
+
+// Cursos de blancas que empiezan con esta primera jugada (UCI).
+export function coursesStarting(uci) {
+  return COURSES.filter((c) => c.color === 'white' && levelEdges(c, c.levels.length - 1).has(`${ROOT_KEY}|${uci}`))
+    .sort((a, b) => Number(levelEdges(b, 0).has(`${ROOT_KEY}|${uci}`)) - Number(levelEdges(a, 0).has(`${ROOT_KEY}|${uci}`)));
+}
+
+function sanToUci(sans) {
+  const chess = new Chess();
+  return sans.map((s) => {
+    const m = chess.move(s);
+    return m.from + m.to + (m.promotion ?? '');
+  });
+}
+
+export function keyAfterUcis(ucis) {
+  const chess = new Chess();
+  for (const u of ucis) if (!moveFromUci(chess, u)) break;
+  return posKey(chess.fen());
+}
+
+// Qué hacer con lo que dicen tus partidas, de lo más importante a lo menos:
+// 1) aperturas que juegas (o te juegan) sin ningún repertorio, 2) jugadas del rival sin respuesta,
+// 3) posiciones de tu repertorio donde jugaste otra cosa.
+// Cada paso: { type, color, count, total, ... } con los cursos que lo resuelven.
+export function gameActions(report, reps) {
+  if (!report?.openings) return [];
+  const actions = [];
+  const total = report.played ?? { white: 0, black: 0 };
+  const enough = (count, of) => count >= 2 || (of && count / of >= 0.25);
+
+  // Con blancas: primeras jugadas tuyas que no empieza ningún repertorio.
+  const whiteFirsts = new Set(reps.filter((r) => r.color === 'white').flatMap((r) => (r.positions[ROOT_KEY]?.moves ?? []).map((m) => m.san)));
+  for (const [move, count] of Object.entries(report.openings.white)) {
+    if (whiteFirsts.has(move) || !enough(count, total.white)) continue;
+    let uci;
+    try {
+      [uci] = sanToUci([move]);
+    } catch {
+      continue;
+    }
+    actions.push({ type: 'apertura', color: 'white', sans: [move], ucis: [uci], count, total: total.white, courses: coursesStarting(uci).slice(0, 4) });
+  }
+  // Con negras: primeras jugadas de las blancas para las que no tienes nada.
+  for (const [move, count] of Object.entries(report.openings.black)) {
+    let key;
+    try {
+      key = keyAfter([move]);
+    } catch {
+      continue;
+    }
+    if (covers(reps, 'black', key) || !enough(count, total.black)) continue;
+    actions.push({ type: 'apertura', color: 'black', sans: [move], ucis: sanToUci([move]), count, total: total.black, courses: coursesFor(key, 'black').slice(0, 4) });
+  }
+  // Jugadas del rival dentro de tu repertorio que no tienes preparadas (y posiciones sin respuesta).
+  const prepared = new Set(actions.map((a) => a.ucis.join(',')));
+  for (const s of [...(report.surprises ?? []), ...(report.gaps ?? []).map((g) => ({ ...g, gap: true }))]) {
+    const ucis = s.gap ? s.ucis : [...s.ucis, s.playedUci];
+    if (prepared.has(ucis.join(','))) continue;
+    const key = keyAfterUcis(ucis);
+    if (covers(reps, s.color, key)) continue;
+    prepared.add(ucis.join(','));
+    actions.push({ type: 'respuesta', color: s.color, repId: s.repId, ucis, key, count: s.count, courses: coursesFor(key, s.color).slice(0, 4) });
+  }
+  // Te desviaste de tu propio repertorio.
+  for (const d of report.deviations ?? []) {
+    actions.push({ type: 'desvio', color: d.color, repId: d.repId, ucis: d.ucis, key: d.key, played: d.played, expected: d.expected, count: d.count });
+  }
+  const rank = { apertura: 0, respuesta: 1, desvio: 2 };
+  return actions.sort((a, b) => rank[a.type] - rank[b.type] || b.count - a.count);
 }
 
 // ---------- Trampas ----------

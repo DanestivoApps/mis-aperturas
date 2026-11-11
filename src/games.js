@@ -51,6 +51,7 @@ export const OUTCOMES = {
   'te-desviaste': 'Te desviaste de tu repertorio',
   'rival-se-salio': 'El rival se salió de tu preparación',
   hueco: 'Llegaste a una posición sin respuesta preparada',
+  'otra-apertura': 'Empezaste con una jugada que no está en tus repertorios',
   'sin-repertorio': 'No tienes repertorio para ese color',
   'no-jugador': 'No jugaste esta partida (otro nombre de usuario)',
   'otra-variante': 'Partida desde otra posición o variante',
@@ -103,6 +104,8 @@ export function analyzeGame(game, reps, username) {
     const where = { ply, key, ucis: ucis.slice(), repId: holder?.id, played: move.san, playedUci: uci };
     if (!repMoves.length) return { ...base, ...where, outcome: userTurn ? 'hueco' : 'fin' };
     if (!repMoves.some((m) => m.uci === uci)) {
+      // Con blancas, salir con otra jugada no es un despiste: es otra apertura que no tienes preparada.
+      if (userTurn && ply === 0) return { ...base, ...where, outcome: 'otra-apertura' };
       return {
         ...base,
         ...where,
@@ -132,7 +135,7 @@ export function summarize(results) {
     return [...map.values()].sort((a, b) => b.count - a.count || a.ply - b.ply);
   };
 
-  const relevant = results.filter((r) => !['no-jugador', 'otra-variante', 'sin-repertorio', 'error'].includes(r.outcome));
+  const relevant = results.filter((r) => !['no-jugador', 'otra-variante', 'sin-repertorio', 'otra-apertura', 'error'].includes(r.outcome));
   return {
     counts,
     analyzed: relevant.length,

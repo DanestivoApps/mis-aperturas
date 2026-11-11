@@ -1,15 +1,13 @@
 // Mis partidas: compara tus partidas de Chess.com / Lichess / PGN con tus repertorios.
-import { Chess } from 'chess.js';
 import { h, fill, toast } from '../dom.js';
-import { getData, getSettings, updateSettings, getRepertoire, save } from '../store.js';
-import { addMove, pathFromUcis, pathTo } from '../repertoire.js';
+import { getData, getSettings, updateSettings } from '../store.js';
 import { parseGames, analyzeGame, summarize, moveNumber, OUTCOMES } from '../games.js';
 import { fetchChesscomGames } from '../chesscom.js';
 import { fetchLichessGames } from '../lichess.js';
-import { newCard, gradeWrong } from '../srs.js';
-import { moveFromUci } from '../chess-utils.js';
 import { san } from '../notation.js';
 import { lastAnalysis } from '../partidas.js';
+import { buildReport, gameActions } from '../insights.js';
+import { actionList } from './actions.js';
 
 const SOURCES = [
   { id: 'chesscom', label: 'Chess.com' },
@@ -136,50 +134,25 @@ export function renderGames(root) {
     const { summary, analysis } = last;
     const c = summary.counts;
     const followed = (c.fin ?? 0) + (c['fin-partida'] ?? 0);
-    const skipped = (c['no-jugador'] ?? 0) + (c['otra-variante'] ?? 0) + (c['sin-repertorio'] ?? 0) + (c.error ?? 0);
+    const mine = analysis.filter((r) => r.color && !['no-jugador', 'otra-variante', 'error'].includes(r.outcome)).length;
+    const noRep = (c['sin-repertorio'] ?? 0) + (c['otra-apertura'] ?? 0);
+    const actions = gameActions(buildReport(analysis, { username: last.username }), getData().repertoires);
 
     fill(results,
       h('div', { class: 'tiles' },
-        tile('Partidas comparadas', summary.analyzed, `Media: ${summary.averageBook.toFixed(1)} jugadas dentro de tu repertorio`),
-        tile('Seguiste tu repertorio', followed, 'Hasta el final de tu preparación'),
-        tile('Te desviaste', c['te-desviaste'] ?? 0, 'Jugaste algo distinto a lo preparado'),
-        tile('El rival te sorprendió', (c['rival-se-salio'] ?? 0) + (c.hueco ?? 0), 'Jugadas o posiciones sin preparar'),
+        tile('Tus partidas', mine, c['no-jugador'] ? `${c['no-jugador']} no eran tuyas (otro usuario)` : 'Las que has descargado'),
+        tile('Fuera de tus repertorios', noRep, 'Aperturas que no tienes preparadas'),
+        tile('Dentro de tu preparación', followed, 'Llegaste hasta donde tenías preparado'),
+        tile('Te pillaron o te saliste', (c['te-desviaste'] ?? 0) + (c['rival-se-salio'] ?? 0) + (c.hueco ?? 0), 'Dentro de tu repertorio'),
       ),
-      skipped
-        ? h('p', { class: 'muted small' },
-            `${skipped} partidas no se compararon: ${[
-              c['no-jugador'] && `${c['no-jugador']} con otro nombre de jugador`,
-              c['sin-repertorio'] && `${c['sin-repertorio']} con un color sin repertorio`,
-              c['otra-variante'] && `${c['otra-variante']} desde otra posición o variante`,
-              c.error && `${c.error} ilegibles`,
-            ].filter(Boolean).join(', ')}.`)
-        : null,
-
-      section('Tus desviaciones', 'Posiciones donde no jugaste lo de tu repertorio. Márcalas para repasarlas.',
-        summary.deviations, (d) => [
-          h('div', null,
-            lineText(d), ' ',
-            h('span', null, `jugaste `, h('strong', null, san(d.played)), times(d.count), ' · tu repertorio: ', h('strong', null, d.expected.map(san).join(' / '))),
-          ),
-          h('div', { class: 'weak-actions' },
-            h('button', { class: 'btn', onClick: (e) => markForReview(d, e.currentTarget) }, 'Repasar esta posición'),
-            editorLink(d.repId, pathUcis(d)),
-          ),
-        ]),
-
-      section('Jugadas del rival que no tienes preparadas', 'Lo que te juegan y aún no está en tu repertorio. Prepara una respuesta.',
-        summary.surprises, (s) => [
-          h('div', null, lineText(s), ' ', h('strong', null, `${moveNumber(s.ply)} ${san(s.played)}`), times(s.count)),
-          h('div', { class: 'weak-actions' },
-            h('button', { class: 'btn primary', onClick: () => prepareReply(s) }, 'Preparar respuesta'),
-          ),
-        ]),
-
-      section('Posiciones sin respuesta preparada', 'El rival jugó algo de tu repertorio, pero ahí no tienes jugada.',
-        summary.gaps, (g) => [
-          h('div', null, lineText(g), times(g.count)),
-          h('div', { class: 'weak-actions' }, editorLink(g.repId, pathUcis(g), 'Preparar respuesta')),
-        ]),
+      actions.length
+        ? h('div', { class: 'card' },
+            h('h3', null, 'Qué hacer ahora'),
+            h('p', { class: 'muted small' }, 'Por orden de importancia: primero lo que más te sale en tus partidas.'),
+            actionList(actions, { limit: 12, onChange: renderResults }),
+            actions.length > 12 ? h('p', { class: 'muted small' }, `… y ${actions.length - 12} cosas más de menos importancia.`) : null,
+          )
+        : h('p', { class: 'notice ok' }, '¡Todo en orden! En estas partidas no hay nada que no tengas preparado.'),
 
       h('details', { class: 'card' },
         h('summary', null, h('h3', { class: 'inline' }, `Partida a partida (${analysis.length})`)),
@@ -216,66 +189,12 @@ function tile(label, value, sub) {
   );
 }
 
-function times(count) {
-  return count > 1 ? [' ', h('span', { class: 'chip' }, `${count} veces`)] : null;
-}
-
-function section(title, help, items, row) {
-  if (!items.length) return null;
-  return h('div', { class: 'card' },
-    h('h3', null, title),
-    h('p', { class: 'muted small' }, help),
-    h('ul', { class: 'weak-list' }, items.slice(0, 15).map((item) => h('li', null, row(item)))),
-    items.length > 15 ? h('p', { class: 'muted small' }, `… y ${items.length - 15} más.`) : null,
-  );
-}
-
-// Jugadas de la partida hasta la posición, con números: "1. e4 e5 2. Nf3 Nc6".
-function lineText(r) {
-  const sans = r.game.sans.slice(0, r.ply);
-  const text = sans.map((move, i) => (i % 2 === 0 ? `${moveNumber(i)} ${san(move)}` : san(move))).join(' ');
-  return h('span', { class: 'weak-line' }, text || 'Posición inicial');
-}
-
 function describe(r) {
   const base = OUTCOMES[r.outcome];
   if (r.outcome === 'te-desviaste') return `${base}: ${moveNumber(r.ply)} ${san(r.played)} (tu repertorio: ${r.expected.map(san).join(' / ')})`;
+  if (r.outcome === 'otra-apertura') return `${base}: 1.${san(r.played)}`;
   if (r.outcome === 'rival-se-salio') return `${base}: ${moveNumber(r.ply)} ${san(r.played)}`;
   if (r.outcome === 'fin' || r.outcome === 'fin-partida') return `${base} (${r.ply} jugadas)`;
   if (r.outcome === 'hueco') return `${base} (tras ${moveNumber(r.ply - 1)} ${san(r.game.sans[r.ply - 1])})`;
   return base;
-}
-
-// Camino (en UCI) hasta la posición dentro del repertorio que la contiene.
-function pathUcis(r) {
-  const rep = getRepertoire(r.repId);
-  if (!rep) return [];
-  const path = pathFromUcis(rep, r.ucis) ?? pathTo(rep, r.key) ?? [];
-  return path.map((s) => s.move.uci);
-}
-
-function editorLink(repId, ucis, label = 'Ver en el editor') {
-  if (!getRepertoire(repId)) return null;
-  return h('a', { class: 'btn', href: `#/editar/${repId}?ruta=${ucis.join(',')}` }, label);
-}
-
-function markForReview(r, button) {
-  const rep = getRepertoire(r.repId);
-  if (!rep) return;
-  const card = (rep.cards[r.key] ??= newCard());
-  gradeWrong(card);
-  save();
-  button.disabled = true;
-  button.textContent = 'Marcada ✓';
-  toast('Saldrá en tu próximo repaso', 'ok');
-}
-
-function prepareReply(r) {
-  const rep = getRepertoire(r.repId);
-  if (!rep?.positions[r.key]) return;
-  const move = moveFromUci(new Chess(rep.positions[r.key].fen), r.playedUci);
-  if (!move) return;
-  addMove(rep, move, { own: Boolean(rep.source) });
-  save(rep);
-  location.hash = `#/editar/${rep.id}?ruta=${[...pathUcis(r), r.playedUci].join(',')}`;
 }

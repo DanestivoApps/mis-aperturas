@@ -33,6 +33,7 @@ export function bestMove(fen, level = 'medio') {
       listener = (line) => {
         if (line.startsWith('bestmove')) resolve(line.split(' ')[1]);
       };
+      worker.postMessage('setoption name MultiPV value 1');
       worker.postMessage(`setoption name Skill Level value ${skill}`);
       worker.postMessage(`position fen ${fen}`);
       worker.postMessage(`go movetime ${movetime}`);
@@ -43,20 +44,23 @@ export function bestMove(fen, level = 'medio') {
 }
 
 // Evaluación de una posición a toda fuerza: { cp | mate (desde quien mueve), best, pv }.
-export function analyse(fen, depth = 13) {
+// Con `multipv` > 1, además `lines`: las mejores jugadas, cada una con su evaluación y su línea.
+export function analyse(fen, depth = 13, multipv = 1) {
   const task = queue.then(async () => {
     await start();
     return new Promise((resolve) => {
-      let last = {};
+      const lines = [];
       listener = (line) => {
         if (line.startsWith('info') && line.includes(' pv ') && line.includes(' score ')) {
           const cp = line.match(/ score cp (-?\d+)/);
           const mate = line.match(/ score mate (-?\d+)/);
-          last = { cp: cp ? Number(cp[1]) : null, mate: mate ? Number(mate[1]) : null, pv: line.split(' pv ')[1].trim().split(' ') };
+          const n = Number(line.match(/ multipv (\d+)/)?.[1] ?? 1);
+          lines[n - 1] = { cp: cp ? Number(cp[1]) : null, mate: mate ? Number(mate[1]) : null, pv: line.split(' pv ')[1].trim().split(' ') };
         } else if (line.startsWith('bestmove')) {
-          resolve({ ...last, best: line.split(' ')[1] });
+          resolve({ ...(lines[0] ?? {}), best: line.split(' ')[1], lines: lines.filter(Boolean) });
         }
       };
+      worker.postMessage(`setoption name MultiPV value ${multipv}`);
       worker.postMessage('setoption name Skill Level value 20');
       worker.postMessage(`position fen ${fen}`);
       worker.postMessage(`go depth ${depth}`);

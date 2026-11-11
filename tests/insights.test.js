@@ -83,3 +83,42 @@ describe('trampas', () => {
     }
   });
 });
+
+describe('qué hacer con tus partidas', () => {
+  const pgnGame = (white, black, moves) => `[White "${white}"]\n[Black "${black}"]\n\n${moves} *\n`;
+  it('separa «otra apertura» de los desvíos y propone pasos con cursos', async () => {
+    const { gameActions } = await import('../src/insights.js');
+    const rep = repOf('pirc-alekhine');
+    const games = [
+      ...Array(5).fill(pgnGame('Yo', 'R', '1. d4 d5 2. c4')),
+      ...Array(3).fill(pgnGame('Yo', 'R', '1. e4 e5 2. Nf3')),
+      ...Array(4).fill(pgnGame('R', 'Yo', '1. e4 c5')),
+    ];
+    const analysis = parseGames(games.join('\n')).map((g) => analyzeGame(g, [rep], 'Yo'));
+    expect(analysis.filter((r) => r.outcome === 'otra-apertura')).toHaveLength(5);
+    const report = buildReport(analysis, { username: 'Yo' });
+    expect(report.deviations).toHaveLength(0);
+    const actions = gameActions(report, [rep]);
+    const d4 = actions.find((a) => a.type === 'apertura' && a.color === 'white');
+    expect(d4).toMatchObject({ count: 5, total: 8 });
+    expect(d4.courses.length).toBeGreaterThan(0);
+    const black = actions.find((a) => a.type === 'apertura' && a.color === 'black');
+    expect(black.courses.length).toBeGreaterThan(0);
+    const e5 = actions.find((a) => a.type === 'respuesta');
+    expect(e5).toMatchObject({ ucis: ['e2e4', 'e7e5'], count: 3 });
+    expect(e5.courses.map((c) => c.id)).toContain('italiana');
+  });
+
+  it('sugiere jugadas de los cursos y copia la línea de un curso', async () => {
+    const { courseSuggestions, graftFromCourse } = await import('../src/courses.js');
+    const key = keyAfter(['e4', 'e5']);
+    const sugg = courseSuggestions(key, 'white');
+    expect(sugg[0].san).toBe('Nf3');
+    expect(sugg[0].courses.length).toBeGreaterThan(2);
+    const rep = repOf('pirc-alekhine');
+    const added = graftFromCourse(rep, getCourse('italiana'), key, 'g1f3');
+    expect(added).toBeGreaterThan(5);
+    expect(rep.positions[key].moves[0].comment).toBeTruthy();
+    expect(coverageGaps([rep]).some((g) => g.sans.join(' ') === 'e4 e5')).toBe(false);
+  });
+});

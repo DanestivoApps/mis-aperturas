@@ -13,7 +13,9 @@ import { cloudEval, formatEval, explorer, parseStudyUrl, fetchStudyPgn, TOKEN_UR
 import { playMove } from '../sound.js';
 import { reviewRepertoire } from '../review.js';
 import { getCourse, LEVELS } from '../library.js';
-import { expandCourse, updateCourse, updateMessage, isOutdated } from '../courses.js';
+import { expandCourse, updateCourse, updateMessage, isOutdated, courseSuggestions, graftFromCourse } from '../courses.js';
+import { analyse, stopEngine } from '../engine.js';
+import { formatEval as engineEval } from '../game-review.js';
 import { san } from '../notation.js';
 import { icon } from '../icons.js';
 
@@ -132,9 +134,13 @@ export function renderEditor(root, { id, ruta = '' }) {
     const evalEl = h('span', { class: 'eval', hidden: true });
     const explorerEl = h('div', { class: 'explorer' });
 
+    // Sin jugadas aquí: sugerencias de los cursos (y del motor si te toca) para que sepas cómo seguir.
+    const suggestEl = moves.length ? null : h('div', { class: 'suggest' }, h('p', { class: 'muted small' }, 'Buscando sugerencias…'));
     let hint;
-    if (userTurn && !moves.length && key !== ROOT_KEY) {
-      hint = h('div', { class: 'notice warn' }, '⚠ Te toca mover y aún no tienes respuesta. Juega en el tablero la jugada que quieres usar.');
+    if (userTurn && !moves.length) {
+      hint = h('div', { class: 'notice warn' }, '⚠ Aún no tienes respuesta aquí. Elige una de las sugerencias o juega en el tablero la que quieras.');
+    } else if (!moves.length) {
+      hint = h('p', { class: 'muted' }, 'Turno del rival. Añade las jugadas del rival que quieres preparar: las más habituales están abajo.');
     } else if (userTurn && moves.length > 1) {
       hint = h('div', { class: 'notice warn' },
         `Tienes ${moves.length} jugadas propias aquí. En el entrenamiento cada una se practicará en su propia línea; lo normal es tener solo una.`);
@@ -181,6 +187,7 @@ export function renderEditor(root, { id, ruta = '' }) {
       h('div', { class: 'card' },
         h('h3', null, userTurn ? 'Tu jugada aquí' : 'Respuestas del rival preparadas'),
         hint,
+        suggestEl,
         moves.length
           ? h('ul', { class: 'move-rows' },
               moves.map((m, i) =>
@@ -299,7 +306,85 @@ export function renderEditor(root, { id, ruta = '' }) {
       if (!stillHere()) return;
       if (settings.showEval) loadEval(fen, evalEl, stillHere);
       loadExplorer(fen, moves, explorerEl, stillHere);
+      if (suggestEl) loadSuggestions(key, fen, userTurn, suggestEl, stillHere);
     }, 250);
+  }
+
+  // Qué jugar aquí: lo que hacen los cursos de la biblioteca y, si te toca, lo que dice Stockfish.
+  function loadSuggestions(key, fen, userTurn, el, stillHere) {
+    const fromCourses = courseSuggestions(key, rep.color).slice(0, userTurn ? 4 : 6);
+    if (fromCourses.length) board.setAutoShapes(fromCourses.slice(0, 3).map((s) => arrow(s.uci, userTurn ? 'blue' : 'paleBlue')));
+    const engineEl = h('div', { class: 'suggest-engine' }, h('p', { class: 'muted small' }, 'Stockfish está pensando…'));
+    const courseNames = (s) => {
+      const names = s.courses.slice(0, 3).map((c) => c.course.name);
+      return names.join(' · ') + (s.courses.length > 3 ? ` y ${s.courses.length - 3} más` : '');
+    };
+    fill(el,
+      fromCourses.length
+        ? [
+            h('p', { class: 'insight-title' }, userTurn ? 'Lo que juegan los cursos (flechas azules)' : 'Lo que suele jugar el rival según los cursos'),
+            h('ul', { class: 'suggest-list' }, fromCourses.map((s) => h('li', null,
+              h('div', { class: 'suggest-head' },
+                h('strong', { class: 'suggest-move' }, san(s.san)),
+                h('span', { class: 'muted small' }, courseNames(s))),
+              s.comment ? h('p', { class: 'small suggest-idea' }, s.comment) : null,
+              h('div', { class: 'weak-actions' },
+                h('button', { class: `btn ${userTurn ? 'primary' : ''}`, onClick: () => useMove(s.uci, s.comment) }, userTurn ? 'Usar esta jugada' : 'Añadir'),
+                h('button', {
+                  class: 'btn',
+                  title: 'Añade esta jugada y toda la preparación del curso que cuelga de ella, con sus explicaciones',
+                  onClick: () => graft(s.courses[0].course, key, s.uci),
+                }, `Copiar la línea de «${s.courses[0].course.name}»`),
+              ),
+            ))),
+          ]
+        : h('p', { class: 'muted small' }, 'Ningún curso de la biblioteca pasa por esta posición.'),
+      userTurn ? [h('p', { class: 'insight-title' }, 'Lo que dice Stockfish'), engineEl] : null,
+    );
+    if (!userTurn) return;
+    stopEngine();
+    analyse(fen, 14, 3).then((res) => {
+      if (!stillHere()) return;
+      const whiteToMove = fen.split(' ')[1] === 'w';
+      fill(engineEl, h('ul', { class: 'suggest-list engine' }, res.lines.map((line) => {
+        const pos = new Chess(fen);
+        const sans = [];
+        for (const u of line.pv.slice(0, 6)) {
+          const m = moveFromUci(pos, u);
+          if (!m) break;
+          sans.push(m.san);
+        }
+        return h('li', null,
+          h('div', { class: 'suggest-head' },
+            h('strong', { class: 'suggest-move' }, san(sans[0] ?? '?')),
+            h('span', { class: 'eval' }, engineEval(line, whiteToMove)),
+            h('span', { class: 'muted small ellipsis' }, sans.slice(1).map(san).join(' ')),
+            h('button', { class: 'btn', onClick: () => useMove(line.pv[0]) }, 'Usar'),
+          ),
+        );
+      })),
+      h('p', { class: 'muted small' }, 'Evaluación desde las blancas (+ ventaja blanca, − negra). Las jugadas del motor no traen explicación: si eliges una, escribe tú la idea en el comentario.'));
+    }).catch((err) => {
+      if (stillHere()) fill(engineEl, h('p', { class: 'muted small' }, err.message || 'No se pudo usar el motor.'));
+    });
+  }
+
+  function useMove(uci, comment = '') {
+    const move = moveFromUci(chess, uci);
+    if (!move) return;
+    playMove(move);
+    const edge = addMove(rep, move, { own: Boolean(rep.source) });
+    if (comment && !edge.comment) edge.comment = comment;
+    save(rep);
+    enter(edge);
+  }
+
+  function graft(course, key, uci) {
+    const added = graftFromCourse(rep, course, key, uci);
+    save(rep);
+    const edge = rep.positions[key]?.moves.find((m) => m.uci === uci);
+    toast(added ? `${added} jugadas copiadas de «${course.name}», con sus explicaciones` : 'Ya tenías esa línea', 'ok');
+    if (edge) enter(edge);
   }
 
   async function loadEval(fen, el, stillHere) {

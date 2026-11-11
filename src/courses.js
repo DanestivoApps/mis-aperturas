@@ -1,7 +1,9 @@
 // Añadir cursos de la biblioteca a tu colección, ampliarlos y actualizarlos.
 import { getData, addRepertoire, save } from './store.js';
-import { newRepertoire, importPgn, allLines, trainableKeys, deleteMove, resetKeys } from './repertoire.js';
-import { getCourse, coursePgn, levelPgn } from './library.js';
+import { Chess } from 'chess.js';
+import { newRepertoire, importPgn, allLines, trainableKeys, deleteMove, resetKeys, addMove } from './repertoire.js';
+import { getCourse, coursePgn, levelPgn, COURSES } from './library.js';
+import { moveFromUci } from './chess-utils.js';
 
 // Huella del contenido del curso: si cambia (correcciones, líneas nuevas), hay actualización.
 export function courseVersion(course) {
@@ -128,9 +130,11 @@ export function updateCourse(rep) {
 // Datos de cada nivel (acumulado: Avanzado incluye Esencial), calculados una vez:
 // cada nivel se construye sobre el anterior.
 const levelCache = new Map();
+const graphCache = new Map();
 function levelData(course, level) {
   if (!levelCache.has(course.id)) {
     const rep = newRepertoire(course.name, course.color);
+    graphCache.set(course.id, rep);
     levelCache.set(course.id, course.levels.map((_, i) => {
       importPgn(rep, levelPgn(course, i));
       const keys = new Set(trainableKeys(rep));
@@ -138,6 +142,72 @@ function levelData(course, level) {
     }));
   }
   return levelCache.get(course.id)[Math.min(Math.max(level, 0), course.levels.length - 1)];
+}
+
+// El curso entero (todos los niveles) como repertorio en memoria.
+export function courseGraph(course) {
+  levelData(course, 0);
+  return graphCache.get(course.id);
+}
+
+// Primer nivel del curso que incluye esta jugada.
+function edgeLevel(course, key, uci) {
+  const id = `${key}|${uci}`;
+  for (let i = 0; i < course.levels.length; i++) if (levelEdges(course, i).has(id)) return i;
+  return course.levels.length - 1;
+}
+
+// Qué juegan los cursos de la biblioteca en esta posición (para el color dado):
+// [{ uci, san, comment, courses: [{ course, level, comment }] }], las más repetidas primero.
+export function courseSuggestions(key, color) {
+  const out = new Map();
+  for (const course of COURSES) {
+    if (course.color !== color) continue;
+    const pos = courseGraph(course).positions[key];
+    for (const m of pos?.moves ?? []) {
+      const entry = out.get(m.uci) ?? { uci: m.uci, san: m.san, comment: '', courses: [] };
+      entry.courses.push({ course, level: edgeLevel(course, key, m.uci), comment: m.comment ?? '' });
+      entry.comment ||= m.comment ?? '';
+      out.set(m.uci, entry);
+    }
+  }
+  for (const e of out.values()) e.courses.sort((a, b) => a.level - b.level);
+  return [...out.values()].sort((a, b) => b.courses.length - a.courses.length || a.courses[0].level - b.courses[0].level);
+}
+
+// Copia en tu repertorio la preparación de un curso a partir de una jugada suya:
+// esa jugada y todo lo que cuelga de ella en el nivel más básico que la contiene.
+// Devuelve cuántas jugadas nuevas se añadieron.
+export function graftFromCourse(rep, course, key, uci) {
+  const graph = courseGraph(course);
+  const edges = levelEdges(course, edgeLevel(course, key, uci));
+  const own = Boolean(rep.source);
+  let added = 0;
+  const copy = (from, edge) => {
+    const before = rep.positions[from]?.moves.some((m) => m.uci === edge.uci);
+    const move = moveFromUci(new Chess(graph.positions[from].fen), edge.uci);
+    if (!move) return null;
+    const mine = addMove(rep, move, { own });
+    if (!before) {
+      added++;
+      if (edge.comment && !mine.comment) mine.comment = edge.comment;
+    }
+    return mine;
+  };
+  const first = graph.positions[key]?.moves.find((m) => m.uci === uci);
+  if (!first || !copy(key, first)) return 0;
+  const seen = new Set();
+  const queue = [first.to];
+  while (queue.length) {
+    const at = queue.shift();
+    if (seen.has(at)) continue;
+    seen.add(at);
+    for (const edge of graph.positions[at]?.moves ?? []) {
+      if (!edges.has(`${at}|${edge.uci}`)) continue;
+      if (copy(at, edge)) queue.push(edge.to);
+    }
+  }
+  return added;
 }
 
 export function levelStats(course) {

@@ -14,7 +14,8 @@ let pending = null;
 export function loadReport() {
   try {
     const report = JSON.parse(localStorage.getItem(KEY));
-    return report && report.username === getSettings().chesscomUser ? report : null;
+    // Los resúmenes antiguos (sin aperturas) se rehacen.
+    return report?.openings && report.username === getSettings().chesscomUser ? report : null;
   } catch {
     return null;
   }

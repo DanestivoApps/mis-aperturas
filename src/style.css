@@ -3038,3 +3038,32 @@ textarea:focus {
 .review-counts li.v-warn span { color: var(--warn); }
 .review-counts li.v-bad span { color: var(--bad); }
 .review-jumps p { margin: 0; }
+
+/* ---------- Qué hacer ahora (tus partidas) ---------- */
+.action-list { margin: 8px 0 0; padding: 0; list-style: none; counter-reset: paso; display: grid; gap: 10px; }
+.action-list > li.action {
+  counter-increment: paso; position: relative; padding: 12px 12px 12px 46px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+}
+.action-list > li.action::before {
+  content: counter(paso); position: absolute; left: 12px; top: 12px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; background: var(--accent-soft); color: var(--accent-ink);
+}
+.action-list > li.apertura::before { background: var(--warn-soft); color: var(--warn); }
+.action-list p { margin: 0 0 6px; }
+.action-title { line-height: 1.45; }
+.action-list .weak-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.action-courses { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.action-courses li { display: flex; align-items: center; gap: 8px; }
+.btn.small { min-height: 30px; padding: 4px 10px; font-size: 0.85rem; }
+
+/* ---------- Sugerencias del editor ---------- */
+.suggest { margin-top: 10px; display: grid; gap: 6px; }
+.suggest .insight-title { margin: 6px 0 0; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.suggest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.suggest-list > li { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+.suggest-list.engine > li { padding: 6px 10px; }
+.suggest-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.suggest-head .ellipsis { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggest-move { font-size: 1.1rem; }
+.suggest-idea { margin: 6px 0 8px; line-height: 1.45; }

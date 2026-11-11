@@ -1,11 +1,9 @@
 // Inicio: lo que toca hoy, tus repertorios y acceso a la biblioteca.
 import { h, fill, toast, download, safeFilename, openDialog, dropdown } from '../dom.js';
-import { getData, addRepertoire, removeRepertoire, save, streak, todayCount, getRepertoire, updateSettings } from '../store.js';
+import { getData, addRepertoire, removeRepertoire, save, streak, todayCount, updateSettings } from '../store.js';
 import { newRepertoire, exportPgn, repStats, weakKeys, resetProgress, allLines } from '../repertoire.js';
-import { newCard, gradeWrong } from '../srs.js';
-import { san } from '../notation.js';
-import { moveNumber } from '../games.js';
-import { coverageGaps, recommendations, trapExercises } from '../insights.js';
+import { coverageGaps, gameActions, trapExercises } from '../insights.js';
+import { actionList } from './actions.js';
 import { loadReport, refreshReport } from '../partidas.js';
 import { describeDue } from '../srs.js';
 import { LEVELS, COURSES, getCourse } from '../library.js';
@@ -51,8 +49,6 @@ export function renderHome(root) {
 }
 
 // ---------- Tus partidas ----------
-const lineOf = (item) => `tras ${plural(item.ucis.length, 'jugada', 'jugadas')} de tu repertorio`;
-const numbered = (ply, move) => `${moveNumber(ply)}${san(move)}`;
 
 function gamesCard(reps, report) {
   const user = getData().settings.chesscomUser;
@@ -79,61 +75,17 @@ function gamesCard(reps, report) {
       h('h3', null, icon('chart'), ` Tus partidas de ${user}`),
       h('p', { class: 'muted small' }, 'Analizando tus últimas partidas de Chess.com…'));
   }
-  const dev = report.deviations.slice(0, 3);
-  // Las primeras jugadas sin preparar ya salen en «Cursos que te convienen».
-  const surprises = report.surprises.filter((x) => x.ucis.length > 1).slice(0, 2);
-  const recs = recommendations(report, reps);
-  const outOfBook = report.counts['te-desviaste'] ?? 0;
+  const actions = gameActions(report, reps);
+  const played = (report.played?.white ?? 0) + (report.played?.black ?? 0);
   return h('div', { class: 'card insight-card' },
     h('div', { class: 'section-head' },
-      h('h3', null, icon('chart'), ` Tus últimas ${report.analyzed} partidas`),
-      h('a', { class: 'small', href: '#/partidas' }, 'Ver todo'),
+      h('h3', null, icon('chart'), ` Tus últimas ${played} partidas`),
+      h('a', { class: 'small', href: '#/partidas' }, actions.length > 3 ? `Ver los ${actions.length} pasos` : 'Ver todo'),
     ),
-    h('p', { class: 'muted small' },
-      `De media sigues tu repertorio ${report.averageBook.toFixed(1)} jugadas. `,
-      outOfBook ? `Te saliste de él en ${plural(outOfBook, 'partida', 'partidas')}. ` : 'No te has salido de él en ninguna. ',
-      'Al repasar, lo que te sale en tus partidas va primero.'),
-    dev.length
-      ? h('div', null,
-          h('p', { class: 'insight-title' }, 'Donde te equivocas'),
-          h('ul', { class: 'insight-list' }, dev.map((d) => h('li', null,
-            h('span', null, 'Jugaste ', h('strong', null, numbered(d.ucis.length, d.played)),
-              ' en vez de ', h('strong', null, d.expected.map((m) => numbered(d.ucis.length, m)).join(' / ')),
-              h('span', { class: 'muted small' }, ` · ${plural(d.count, 'vez', 'veces')}`)),
-            h('button', { class: 'btn', onClick: (e) => markForReview(d, e.currentTarget) }, 'Repasar'),
-          ))))
-      : null,
-    surprises.length
-      ? h('div', null,
-          h('p', { class: 'insight-title' }, 'Lo que te juegan y no tienes preparado'),
-          h('ul', { class: 'insight-list' }, surprises.map((s) => h('li', null,
-            h('span', null, h('strong', null, numbered(s.ucis.length, s.played)), ` ${lineOf(s)}`,
-              h('span', { class: 'muted small' }, ` · ${plural(s.count, 'vez', 'veces')}`)),
-            getRepertoire(s.repId) ? h('a', { class: 'btn', href: `#/editar/${s.repId}?ruta=${s.ucis.join(',')}` }, 'Preparar') : null,
-          ))))
-      : null,
-    recs.length
-      ? h('div', null,
-          h('p', { class: 'insight-title' }, 'Cursos que te convienen'),
-          h('ul', { class: 'insight-list' }, recs.map((r) => h('li', null,
-            h('span', null, r.color === 'white' ? 'Con blancas te juegan ' : 'Con negras te juegan ',
-              h('strong', null, numbered(r.sans.length - 1, r.sans[r.sans.length - 1])),
-              ` en ${r.count} de ${r.total} partidas y no lo tienes preparado.`,
-              r.courses.length ? [' ', h('span', { class: 'muted small' }, 'Prueba: ')] : null,
-              r.courses.map((c2, i) => [i ? ', ' : '', h('a', { href: `#/biblioteca?q=${encodeURIComponent(c2.name)}` }, c2.name)])),
-          ))))
-      : null,
+    actions.length
+      ? [h('p', { class: 'muted small' }, 'Qué hacer ahora, por orden de importancia:'), actionList(actions, { limit: 3, onChange: rerender })]
+      : h('p', { class: 'muted small' }, 'En tus últimas partidas no hay nada que no tengas preparado. Al repasar, lo que te sale en tus partidas va primero.'),
   );
-}
-
-function markForReview(d, button) {
-  const rep = getRepertoire(d.repId);
-  if (!rep) return;
-  gradeWrong((rep.cards[d.key] ??= newCard()));
-  save();
-  button.disabled = true;
-  button.textContent = 'Marcada ✓';
-  toast('Saldrá en tu próximo repaso', 'ok');
 }
 
 // Huecos del repertorio: salidas habituales para las que no tienes nada.

@@ -56,9 +56,16 @@ diario es un anillo de progreso, y al entrenar una fila de puntos marca tus juga
 
 ### Tus partidas, tu plan y tus trampas
 - **Tus partidas de Chess.com en el inicio**: con tu usuario, la app analiza sola tus últimas 60 partidas cada
-  pocas horas y te dice dónde te sales del repertorio, qué te juegan sin tenerlo preparado y qué cursos te
-  convienen. En el repaso, las posiciones que te salen en tus partidas van primero.
-- **Plan de repertorio** (): eliges con qué abres y si te gusta jugar sólido o al ataque, y te propone
+  pocas horas y te da una lista de **qué hacer ahora**, por orden de importancia: aperturas que juegas (o te
+  juegan) sin ningún repertorio, con los cursos que las cubren y un botón para añadirlos; jugadas del rival a las
+  que no sabes responder, con un botón que te lleva a esa posición; y sitios donde jugaste algo distinto a tu
+  repertorio, para repasarlos. En el repaso, las posiciones que te salen en tus partidas van primero.
+- **Cómo seguir en el editor**: en una posición sin jugada, el editor te enseña lo que juegan los cursos de la
+  biblioteca (con su explicación) y las tres mejores de Stockfish. Con un clic usas esa jugada o copias toda la
+  línea del curso desde ahí, con sus comentarios.
+- **Revisar la partida contra el motor**: cada jugada valorada (la mejor, buena, imprecisión, error, error grave),
+  tu precisión y qué había que jugar en cada caso.
+- **Plan de repertorio** (`#/plan`): eliges con qué abres y si te gusta jugar sólido o al ataque, y te propone
   los cursos justos para no tener huecos. El inicio avisa de las salidas que aún no tienes preparadas.
 - **Trampas**: ejercicios que empiezan en un error del rival; tienes que encontrar cómo castigarlo.
 - **Jugar contra el motor** desde cualquier posición del entrenamiento (Stockfish 19 en el navegador, tres niveles).

@@ -41,7 +41,7 @@ export function formatEval(score, whiteToMove) {
     const m = score.mate * sign;
     return m === 0 ? '#' : `${m > 0 ? '' : '−'}M${Math.abs(m)}`;
   }
-  const v = ((score.cp ?? 0) * sign) / 100;
+  const v = Math.round(((score.cp ?? 0) * sign) / 10) / 10;
   return `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toFixed(1).replace('.', ',')}`;
 }
 
