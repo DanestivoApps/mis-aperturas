@@ -54,6 +54,16 @@ Cada repertorio y cada curso muestra una miniatura de su posición característi
 diario es un anillo de progreso, y al entrenar una fila de puntos marca tus jugadas de la línea
 (acierto, fallo, aprendida y la actual). Tipografía Inter, incluida en la app (funciona sin conexión).
 
+### Tus partidas, tu plan y tus trampas
+- **Tus partidas de Chess.com en el inicio**: con tu usuario, la app analiza sola tus últimas 60 partidas cada
+  pocas horas y te dice dónde te sales del repertorio, qué te juegan sin tenerlo preparado y qué cursos te
+  convienen. En el repaso, las posiciones que te salen en tus partidas van primero.
+- **Plan de repertorio** (): eliges con qué abres y si te gusta jugar sólido o al ataque, y te propone
+  los cursos justos para no tener huecos. El inicio avisa de las salidas que aún no tienes preparadas.
+- **Trampas**: ejercicios que empiezan en un error del rival; tienes que encontrar cómo castigarlo.
+- **Jugar contra el motor** desde cualquier posición del entrenamiento (Stockfish 19 en el navegador, tres niveles).
+- **Ideas y planes del curso** a mano mientras entrenas.
+
 ### Biblioteca de aperturas
 Cursos listos para añadir, al estilo de Chessreps, con la idea de cada jugada explicada y
 las respuestas habituales del rival. Cada curso tiene niveles (**Esencial**, **Avanzado**,

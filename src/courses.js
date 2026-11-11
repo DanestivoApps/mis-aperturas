@@ -147,6 +147,11 @@ export function levelStats(course) {
   });
 }
 
+// Posiciones con jugada tuya en un nivel (para saber qué cursos responden a algo).
+export function levelKeys(course, level) {
+  return levelData(course, level).keys;
+}
+
 // Jugadas ("posición|uci") que forman un nivel: sirven para entrenar solo ese nivel.
 export function levelEdges(course, level) {
   return levelData(course, level).edges;

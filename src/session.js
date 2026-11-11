@@ -20,14 +20,22 @@ export function lineCounts(rep, line, { fromIndex = 0, now = Date.now() } = {}) 
 }
 
 // Para el repaso: la línea con más jugadas pendientes (las nuevas cuentan si queda cupo).
+// Las posiciones que te salen en tus partidas (`priority`) cuentan doble.
 // En caso de empate gana la primera, así se aprende primero la línea principal.
-export function pickSrsLine(rep, lines, { prefixLength = 0, newBudget = 0, skipped = new Set(), now = Date.now() } = {}) {
+export function pickSrsLine(rep, lines, { prefixLength = 0, newBudget = 0, skipped = new Set(), now = Date.now(), priority = null } = {}) {
   let best = null;
   let bestScore = 0;
   for (const line of lines) {
     if (skipped.has(lineId(line))) continue;
     const { due, fresh } = lineCounts(rep, line, { fromIndex: prefixLength, now });
-    const score = due + (newBudget > 0 ? fresh : 0);
+    let score = due + (newBudget > 0 ? fresh : 0);
+    if (score && priority?.size) {
+      for (let i = prefixLength; i < line.length; i++) {
+        const key = line[i].from;
+        const card = rep.cards[key];
+        if (priority.has(key) && isUserTurn(rep, key) && (card ? card.due <= now : newBudget > 0)) score++;
+      }
+    }
     if (score > bestScore) {
       best = line;
       bestScore = score;

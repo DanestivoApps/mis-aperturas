@@ -9,6 +9,7 @@ import { fetchLichessGames } from '../lichess.js';
 import { newCard, gradeWrong } from '../srs.js';
 import { moveFromUci } from '../chess-utils.js';
 import { san } from '../notation.js';
+import { lastAnalysis } from '../partidas.js';
 
 const SOURCES = [
   { id: 'chesscom', label: 'Chess.com' },
@@ -21,6 +22,7 @@ let last = null;
 
 export function renderGames(root) {
   const settings = getSettings();
+  if (!last && lastAnalysis) last = { ...lastAnalysis, summary: summarize(lastAnalysis.analysis) };
   const reps = getData().repertoires;
   let source = settings.gamesSource;
 

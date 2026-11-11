@@ -2892,3 +2892,118 @@ textarea:focus {
     text-align: center;
   }
 }
+
+/* Inicio: tus partidas y huecos del repertorio */
+.insights {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.insights:empty {
+  display: none;
+}
+
+.insight-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+
+.insight-title {
+  margin: 12px 0 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.insight-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.insight-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gaps-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Plan de repertorio */
+.plan-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.plan-choice {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.plan-choice.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.plan-group {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.plan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.plan-row p {
+  margin: 4px 0 0;
+}
+
+.plan-row.owned {
+  border-color: var(--accent);
+}
+
+/* Entrenamiento: botón para seguir contra el motor e ideas del curso */
+.board-controls .play-engine {
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+@media (max-width: 420px) {
+  .board-controls .play-engine span:not(.ico) {
+    display: none;
+  }
+}
+
+.ideas-card p {
+  margin: 8px 0;
+}

@@ -1,7 +1,12 @@
 // Inicio: lo que toca hoy, tus repertorios y acceso a la biblioteca.
-import { h, toast, download, safeFilename, openDialog, dropdown } from '../dom.js';
-import { getData, addRepertoire, removeRepertoire, save, streak, todayCount } from '../store.js';
-import { newRepertoire, exportPgn, repStats, weakKeys, resetProgress } from '../repertoire.js';
+import { h, fill, toast, download, safeFilename, openDialog, dropdown } from '../dom.js';
+import { getData, addRepertoire, removeRepertoire, save, streak, todayCount, getRepertoire, updateSettings } from '../store.js';
+import { newRepertoire, exportPgn, repStats, weakKeys, resetProgress, allLines } from '../repertoire.js';
+import { newCard, gradeWrong } from '../srs.js';
+import { san } from '../notation.js';
+import { moveNumber } from '../games.js';
+import { coverageGaps, recommendations, trapExercises } from '../insights.js';
+import { loadReport, refreshReport } from '../partidas.js';
 import { describeDue } from '../srs.js';
 import { LEVELS, COURSES, getCourse } from '../library.js';
 import { icon } from '../icons.js';
@@ -18,9 +23,11 @@ export function renderHome(root) {
     page.append(welcome());
     return;
   }
+  const insights = h('div', { class: 'insights' });
   page.append(
     today(reps),
     updateBanner() ?? '',
+    insights,
     h('div', { class: 'section-head' },
       h('h2', null, 'Tus repertorios'),
       h('div', { class: 'section-actions' },
@@ -28,6 +35,115 @@ export function renderHome(root) {
       ),
     ),
     h('div', { class: 'rep-grid' }, reps.map(repCard)),
+  );
+  fill(insights, gamesCard(reps, loadReport()), gapsNote(reps));
+  // Las partidas se analizan solas en segundo plano; al terminar se redibuja este bloque.
+  const shown = loadReport()?.at;
+  refreshReport()
+    .then((report) => {
+      if (report && report.at !== shown && insights.isConnected) fill(insights, gamesCard(reps, report), gapsNote(reps));
+    })
+    .catch((err) => {
+      if (insights.isConnected && getData().settings.chesscomUser) {
+        insights.prepend(h('p', { class: 'muted small' }, `No se pudieron leer tus partidas: ${err.message}`));
+      }
+    });
+}
+
+// ---------- Tus partidas ----------
+const lineOf = (item) => `tras ${plural(item.ucis.length, 'jugada', 'jugadas')} de tu repertorio`;
+const numbered = (ply, move) => `${moveNumber(ply)}${san(move)}`;
+
+function gamesCard(reps, report) {
+  const user = getData().settings.chesscomUser;
+  if (!user) {
+    const input = h('input', { type: 'text', placeholder: 'Tu usuario de Chess.com', autocomplete: 'off', 'aria-label': 'Usuario de Chess.com' });
+    return h('form', {
+      class: 'card insight-card',
+      onSubmit: (e) => {
+        e.preventDefault();
+        const name = input.value.trim();
+        if (!name) return;
+        updateSettings({ chesscomUser: name, gamesSource: 'chesscom' });
+        toast('Analizando tus partidas…', 'info');
+        rerender();
+      },
+    },
+      h('h3', null, icon('chart'), ' Aprende de tus partidas'),
+      h('p', { class: 'muted small' }, 'Con tu usuario de Chess.com, la app mira tus últimas partidas y te dice dónde te sales del repertorio, qué te juegan sin tenerlo preparado y qué repasar primero.'),
+      h('div', { class: 'inline-field' }, input, h('button', { class: 'btn primary', type: 'submit' }, 'Conectar')),
+    );
+  }
+  if (!report) {
+    return h('div', { class: 'card insight-card' },
+      h('h3', null, icon('chart'), ` Tus partidas de ${user}`),
+      h('p', { class: 'muted small' }, 'Analizando tus últimas partidas de Chess.com…'));
+  }
+  const dev = report.deviations.slice(0, 3);
+  // Las primeras jugadas sin preparar ya salen en «Cursos que te convienen».
+  const surprises = report.surprises.filter((x) => x.ucis.length > 1).slice(0, 2);
+  const recs = recommendations(report, reps);
+  const outOfBook = report.counts['te-desviaste'] ?? 0;
+  return h('div', { class: 'card insight-card' },
+    h('div', { class: 'section-head' },
+      h('h3', null, icon('chart'), ` Tus últimas ${report.analyzed} partidas`),
+      h('a', { class: 'small', href: '#/partidas' }, 'Ver todo'),
+    ),
+    h('p', { class: 'muted small' },
+      `De media sigues tu repertorio ${report.averageBook.toFixed(1)} jugadas. `,
+      outOfBook ? `Te saliste de él en ${plural(outOfBook, 'partida', 'partidas')}. ` : 'No te has salido de él en ninguna. ',
+      'Al repasar, lo que te sale en tus partidas va primero.'),
+    dev.length
+      ? h('div', null,
+          h('p', { class: 'insight-title' }, 'Donde te equivocas'),
+          h('ul', { class: 'insight-list' }, dev.map((d) => h('li', null,
+            h('span', null, 'Jugaste ', h('strong', null, numbered(d.ucis.length, d.played)),
+              ' en vez de ', h('strong', null, d.expected.map((m) => numbered(d.ucis.length, m)).join(' / ')),
+              h('span', { class: 'muted small' }, ` · ${plural(d.count, 'vez', 'veces')}`)),
+            h('button', { class: 'btn', onClick: (e) => markForReview(d, e.currentTarget) }, 'Repasar'),
+          ))))
+      : null,
+    surprises.length
+      ? h('div', null,
+          h('p', { class: 'insight-title' }, 'Lo que te juegan y no tienes preparado'),
+          h('ul', { class: 'insight-list' }, surprises.map((s) => h('li', null,
+            h('span', null, h('strong', null, numbered(s.ucis.length, s.played)), ` ${lineOf(s)}`,
+              h('span', { class: 'muted small' }, ` · ${plural(s.count, 'vez', 'veces')}`)),
+            getRepertoire(s.repId) ? h('a', { class: 'btn', href: `#/editar/${s.repId}?ruta=${s.ucis.join(',')}` }, 'Preparar') : null,
+          ))))
+      : null,
+    recs.length
+      ? h('div', null,
+          h('p', { class: 'insight-title' }, 'Cursos que te convienen'),
+          h('ul', { class: 'insight-list' }, recs.map((r) => h('li', null,
+            h('span', null, r.color === 'white' ? 'Con blancas te juegan ' : 'Con negras te juegan ',
+              h('strong', null, numbered(r.sans.length - 1, r.sans[r.sans.length - 1])),
+              ` en ${r.count} de ${r.total} partidas y no lo tienes preparado.`,
+              r.courses.length ? [' ', h('span', { class: 'muted small' }, 'Prueba: ')] : null,
+              r.courses.map((c2, i) => [i ? ', ' : '', h('a', { href: `#/biblioteca?q=${encodeURIComponent(c2.name)}` }, c2.name)])),
+          ))))
+      : null,
+  );
+}
+
+function markForReview(d, button) {
+  const rep = getRepertoire(d.repId);
+  if (!rep) return;
+  gradeWrong((rep.cards[d.key] ??= newCard()));
+  save();
+  button.disabled = true;
+  button.textContent = 'Marcada ✓';
+  toast('Saldrá en tu próximo repaso', 'ok');
+}
+
+// Huecos del repertorio: salidas habituales para las que no tienes nada.
+function gapsNote(reps) {
+  const gaps = coverageGaps(reps);
+  if (!gaps.length) return null;
+  return h('div', { class: 'notice warn gaps-note' },
+    h('span', null, icon('alert'), ' Te falta preparar: ', h('strong', null, gaps.slice(0, 4).map((g) => g.label).join(', ')),
+      gaps.length > 4 ? ` y ${gaps.length - 4} más` : '', '.'),
+    h('a', { class: 'btn', href: '#/plan' }, 'Ver mi plan'),
   );
 }
 
@@ -186,6 +302,7 @@ function repMenu(rep, s) {
   return dropdown('⋯', [
     weak ? { label: `Repasar mis errores (${weak})`, href: `#/entrenar/${rep.id}?modo=errores` } : null,
     s.total ? { label: 'Contrarreloj', href: `#/contrarreloj/${rep.id}` } : null,
+    trapCount(rep) ? { label: `Trampas (${trapCount(rep)})`, href: `#/entrenar/${rep.id}?modo=trampas`, title: 'El rival se equivoca: encuentra cómo castigarlo' } : null,
     { label: 'Editar jugadas', href: `#/editar/${rep.id}` },
     'sep',
     { label: 'Renombrar', onClick: () => renameRep(rep) },
@@ -319,6 +436,12 @@ function newRepDialog() {
   nameInput.focus();
 }
 
+const trapCache = new WeakMap();
+function trapCount(rep) {
+  if (!trapCache.has(rep)) trapCache.set(rep, trapExercises(rep, allLines(rep)).length);
+  return trapCache.get(rep);
+}
+
 // ---------- Primera vez ----------
 function welcome() {
   return h('div', { class: 'welcome' },
@@ -331,6 +454,14 @@ function welcome() {
         h('strong', null, 'Elige un curso de la biblioteca'),
         h('span', { class: 'muted small' },
           `${COURSES.length} cursos con la idea de cada jugada explicada: Italiana, Española, Londres, Caro-Kann, Najdorf, Nimzoindia…`),
+      ),
+      h('span', { class: 'welcome-arrow' }, icon('arrow')),
+    ),
+    h('a', { class: 'welcome-option', href: '#/plan' },
+      h('span', { class: 'welcome-icon' }, icon('target')),
+      h('span', null,
+        h('strong', null, 'Hazme un plan de repertorio'),
+        h('span', { class: 'muted small' }, 'Dime cómo te gusta jugar y te propongo una apertura con blancas y una respuesta a cada salida con negras.'),
       ),
       h('span', { class: 'welcome-arrow' }, icon('arrow')),
     ),

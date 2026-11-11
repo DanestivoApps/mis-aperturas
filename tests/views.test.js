@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Cada pantalla debe cargarse sin errores de sintaxis ni de importación.
-const VIEWS = ['home', 'library', 'train', 'editor', 'drill', 'stats', 'games', 'settings'];
+const VIEWS = ['home', 'library', 'train', 'editor', 'drill', 'stats', 'games', 'settings', 'plan', 'play'];
 
 describe('pantallas', () => {
   for (const name of VIEWS) {

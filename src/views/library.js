@@ -55,7 +55,11 @@ export function matches(course, q) {
   return normalize(q).trim().split(/\s+/).every((word) => haystack.includes(word));
 }
 
-export function renderLibrary(root) {
+export function renderLibrary(root, { q = null } = {}) {
+  if (q != null) {
+    query = q;
+    filter = 'all';
+  }
   let alive = true;
   let drawing = 0; // cada dibujo de la cuadrícula anula las tandas pendientes del anterior
   const grid = h('div', { class: 'course-grid' });
@@ -191,6 +195,7 @@ export function renderLibrary(root) {
           practiceBtn,
           dropdown('⋯', [
             { label: 'Probar solo la línea principal', href: `#/probar/${course.id}`, title: 'Con flechas y explicaciones, y después sin ayuda' },
+            { label: 'Trampas del curso', href: `#/probar/${course.id}?trampas=1`, title: 'El rival se equivoca: encuentra cómo castigarlo' },
           ], { label: `Más opciones de ${course.name}` }),
         );
         return;
@@ -245,6 +250,7 @@ export function renderLibrary(root) {
             onClick: () => relearn(name),
           },
           { label: 'Contrarreloj', href: `#/contrarreloj/${owned.id}?nivel=${level}` },
+          { label: 'Trampas', href: `#/entrenar/${owned.id}?modo=trampas`, title: 'El rival se equivoca: encuentra cómo castigarlo' },
           { label: 'Ver jugadas', href: `#/editar/${owned.id}` },
         ], { label: `Más opciones de ${course.name}` }),
       );

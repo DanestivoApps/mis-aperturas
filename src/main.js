@@ -15,6 +15,8 @@ import { renderSettings } from './views/settings.js';
 import { renderGames } from './views/games.js';
 import { renderLibrary } from './views/library.js';
 import { renderDrill } from './views/drill.js';
+import { renderPlan } from './views/plan.js';
+import { renderPlay } from './views/play.js';
 import { applyTheme } from './theme.js';
 import { startPwa } from './pwa.js';
 
@@ -36,17 +38,20 @@ const routes = [
       curso: match[1],
       nivel: query.has('nivel') ? Number(query.get('nivel')) : null,
       todas: query.get('lineas') === 'todas',
+      trampas: query.get('trampas') === '1',
     })],
+  [/^#\/jugar/, (el, match, query) => renderPlay(el, { fen: query.get('fen') ?? undefined, color: query.get('color') === 'black' ? 'black' : 'white' })],
+  [/^#\/plan/, (el) => renderPlan(el)],
   [/^#\/contrarreloj\/([^/?]+)/, (el, match, query) =>
     renderDrill(el, { id: match[1], nivel: query.has('nivel') ? Number(query.get('nivel')) : null })],
   [/^#\/estadisticas/, (el) => renderStats(el)],
   [/^#\/partidas/, (el) => renderGames(el)],
-  [/^#\/biblioteca/, (el) => renderLibrary(el)],
+  [/^#\/biblioteca/, (el, match, query) => renderLibrary(el, { q: query.get('q') })],
   [/^#\/ajustes/, (el) => renderSettings(el)],
   [/^/, (el) => renderHome(el)],
 ];
 
-const TITLES = { biblioteca: 'Biblioteca', estadisticas: 'Progreso', partidas: 'Partidas', ajustes: 'Ajustes' };
+const TITLES = { plan: 'Plan de repertorio', biblioteca: 'Biblioteca', estadisticas: 'Progreso', partidas: 'Partidas', ajustes: 'Ajustes' };
 
 function route() {
   cleanup?.();
@@ -64,11 +69,11 @@ function route() {
     }
   }
   // Pantallas de tablero (entrenar, editar...): en el móvil se ocultan las barras para dar sitio.
-  document.body.classList.toggle('focus', /^#\/(entrenar|editar|probar|contrarreloj)\//.test(path));
+  document.body.classList.toggle('focus', /^#\/(entrenar|editar|probar|contrarreloj|jugar)/.test(path));
   // Marca la sección activa en la barra superior.
   const section = path.startsWith('#/probar')
     ? 'biblioteca'
-    : ['biblioteca', 'estadisticas', 'partidas', 'ajustes'].find((s) => path.startsWith(`#/${s}`)) ?? 'home';
+    : ['biblioteca', 'estadisticas', 'partidas', 'ajustes', 'plan'].find((s) => path.startsWith(`#/${s}`)) ?? 'home';
   document.querySelectorAll('.nav a').forEach((a) => a.classList.toggle('on', a.dataset.section === section));
   document.title = TITLES[section] ? `${TITLES[section]} · Mis Aperturas` : 'Mis Aperturas';
   window.scrollTo(0, 0);

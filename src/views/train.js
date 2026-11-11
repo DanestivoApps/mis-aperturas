@@ -18,12 +18,15 @@ import { loadOpenings, openingForPath } from '../openings.js';
 import { play, playMove } from '../sound.js';
 import { san, pieceHint } from '../notation.js';
 import { icon } from '../icons.js';
+import { trapExercises, trapStarts } from '../insights.js';
+import { gamePriority } from '../partidas.js';
 
 const MODES = {
   repaso: ['Repaso', 'Repetición espaciada: lo que toca hoy y algunas jugadas nuevas.'],
   libre: ['Práctica', 'Todas las líneas en orden aleatorio. No cambia tus fechas de repaso.'],
   errores: ['Errores', 'Las posiciones que más fallas. No cambia tus fechas de repaso.'],
   prueba: ['Vista previa', 'La línea principal del curso con la idea de cada jugada. No se añade a tus repertorios.'],
+  trampas: ['Trampas', 'El rival se equivoca: encuentra cómo castigarlo. No cambia tus fechas de repaso.'],
 };
 
 const SHORTCUTS = [
@@ -38,11 +41,13 @@ const SHORTCUTS = [
   ['?', 'Ver estos atajos'],
 ];
 
-export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = false, nivel = null, curso = null, todas = false }) {
+export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = false, nivel = null, curso = null, todas = false, trampas = false }) {
   // Probar un curso: un repertorio en memoria que no se guarda.
   // Con `todas`, se practican todas las líneas del nivel elegido (no solo la principal).
   const previewCourse = curso ? getCourse(curso) : null;
-  const previewLevel = previewCourse && todas ? Math.min(Math.max(nivel ?? 0, 0), previewCourse.levels.length - 1) : 0;
+  const previewLevel = !previewCourse ? 0
+    : trampas ? previewCourse.levels.length - 1
+      : todas ? Math.min(Math.max(nivel ?? 0, 0), previewCourse.levels.length - 1) : 0;
   const rep = previewCourse ? previewRepertoire(previewCourse, previewLevel) : curso ? null : getRepertoire(id);
   if (!rep) {
     root.append(h('section', { class: 'page' },
@@ -50,9 +55,11 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       h('a', { href: curso ? '#/biblioteca' : '#/' }, '← Volver')));
     return;
   }
-  if (previewCourse) modo = 'prueba';
+  if (previewCourse) modo = trampas ? 'trampas' : 'prueba';
   else if (!MODES[modo] || modo === 'prueba') modo = 'repaso';
-  const preview = modo === 'prueba';
+  const preview = Boolean(previewCourse);
+  // Trampas: cada ejercicio empieza en un error del rival; tú tienes que castigarlo.
+  const traps = modo === 'trampas';
   const previewAll = preview && todas;
   const srs = modo === 'repaso';
   // Solo el repaso toca el calendario (y deja de hacerlo al repasar los fallos de la sesión).
@@ -65,7 +72,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   const edges = course ? levelEdges(course, nivel) : null;
   const levelQuery = course ? `&nivel=${nivel}` : '';
   const lines = preview
-    ? previewAll ? allLines(rep) : allLines(rep).slice(0, 1)
+    ? previewAll || traps ? allLines(rep) : allLines(rep).slice(0, 1)
     : allLines(rep).filter(
         (line) =>
           line.length > prefix.length &&
@@ -91,16 +98,21 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     }, ms);
   };
 
+  const trapList = traps ? trapExercises(rep, lines) : [];
+  const trapStart = trapStarts(trapList);
+  // En el repaso, las posiciones que te salen en tus partidas de Chess.com van primero.
+  const priority = modo === 'repaso' ? gamePriority() : null;
+
   const session = {
     correct: 0,
     wrong: 0,
     lines: 0,
     newBudget: settings.newPerSession,
-    queue: modo === 'libre' ? shuffle(lines.slice()) : modo === 'errores' ? weakLines(rep, lines) : preview ? lines.slice() : null,
+    queue: traps ? shuffle(trapList.map((t) => t.line)) : modo === 'libre' ? shuffle(lines.slice()) : modo === 'errores' ? weakLines(rep, lines) : preview ? lines.slice() : null,
     skipped: new Set(),
     mistakes: new Map(), // "posición|jugada" → { line, idx, played }
     retry: false, // repasando los fallos de esta sesión
-    assist: preview && !previewAll, // en la prueba de la línea principal, la primera vuelta es con ayuda
+    assist: preview && !previewAll && !traps, // en la prueba de la línea principal, la primera vuelta es con ayuda
     seen: new Set(), // al practicar un curso sin añadirlo: posiciones ya enseñadas en esta sesión
   };
   // Las líneas salen de una cola (y las falladas vuelven al final) salvo en el repaso.
@@ -124,7 +136,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     modeName, prefix.length ? ' · desde la posición elegida' : '');
   const hintBtn = h('button', { class: 'btn', onClick: showHint, title: 'Primero te marca la pieza; si vuelves a pulsar, la jugada (atajo: H)' }, icon('bulb'), 'Pista');
   const nextBtn = h('button', { class: 'btn primary', hidden: true, onClick: nextLine, title: 'Atajo: Enter' }, 'Siguiente línea →');
-  const skipBtn = h('button', { class: 'btn', hidden: preview && !previewAll, onClick: skipLine, title: 'Atajo: S' }, icon('skip'), 'Saltar');
+  const skipBtn = h('button', { class: 'btn', hidden: preview && !previewAll && !traps, onClick: skipLine, title: 'Atajo: S' }, icon('skip'), 'Saltar');
   const repeatBtn = h('button', { class: 'btn', onClick: repeatLine, title: 'Vuelve a jugar esta línea desde el principio (atajo: R)' }, icon('repeat'), 'Repetir');
   const baseActions = [nextBtn, hintBtn, repeatBtn, skipBtn];
   const actions = h('div', { class: 'actions' }, baseActions);
@@ -149,8 +161,20 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     h('div', { class: 'card' }, h('div', { class: 'card-row' }, h('h3', null, 'Línea'), dots), openingEl, moveText),
     actions,
     summary,
+    ideasCard(),
     h('button', { type: 'button', class: 'link-btn keys-hint', onClick: showShortcuts }, '⌨ Atajos de teclado (?)'),
   );
+
+  // Las ideas del curso (planes y lo que cubre), para leerlas mientras entrenas.
+  function ideasCard() {
+    const course = previewCourse ?? getCourse(rep.source?.course);
+    if (!course) return null;
+    return h('details', { class: 'card ideas-card' },
+      h('summary', null, h('h3', { class: 'inline' }, 'Ideas y planes del curso')),
+      h('p', null, course.intro),
+      h('ul', null, course.covers.map((c) => h('li', null, c))),
+    );
+  }
 
   // «Ver jugada»: con él activado, cada turno tuyo muestra la flecha de la jugada.
   // Empieza desactivado al entrenar (repaso, errores) y activado al practicar (Ajustes puede cambiarlo);
@@ -186,6 +210,12 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
         navBtns.forward,
         h('button', { class: 'icon-btn', title: 'Girar el tablero (F)', onClick: () => board.toggleOrientation() }, '⟲'),
         movesBtn,
+        h('button', {
+          type: 'button',
+          class: 'icon-btn play-engine',
+          title: 'Sigue la partida contra el motor desde esta posición',
+          onClick: playFromHere,
+        }, icon('play'), h('span', null, 'Jugar')),
       ),
       navNote,
     ),
@@ -214,7 +244,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   function updateCounters() {
     const s = scopeStats(rep, lines, { fromIndex: prefix.length });
     let progress;
-    if (preview && !previewAll) progress = h('span', { class: 'chip' }, session.assist ? 'Primera vuelta: con ayuda' : 'Ahora tú, sin ayuda');
+    if (preview && !previewAll && !traps) progress = h('span', { class: 'chip' }, session.assist ? 'Primera vuelta: con ayuda' : 'Ahora tú, sin ayuda');
     else if (srs && !session.retry) {
       progress = [
         h('span', { class: `chip ${s.due ? 'due' : ''}` }, `${s.due} para repasar`),
@@ -252,7 +282,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   function updateDots() {
     if (!cur) return fill(dots);
     fill(dots, cur.line.map((step, i) => {
-      if (i < prefix.length || !isUserTurn(rep, step.from)) return null;
+      if (i < Math.max(prefix.length, cur.start) || !isUserTurn(rep, step.from)) return null;
       const state = cur.results[i] ?? (i === cur.idx && cur.awaiting ? 'current' : 'todo');
       return h('span', { class: `ldot ${state}` });
     }));
@@ -308,6 +338,17 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     boardEl.classList.toggle('viewing', viewPly !== null);
   }
 
+  // Sigue contra el motor desde la posición que ves en el tablero.
+  function playFromHere() {
+    const chess = new Chess();
+    const upTo = cur ? shownPly() : 0;
+    for (const s of (cur?.line ?? []).slice(0, upTo)) {
+      const [from, to] = squaresOf(s.move.uci);
+      chess.move({ from, to, promotion: s.move.uci[4] });
+    }
+    location.hash = `#/jugar?fen=${encodeURIComponent(chess.fen())}&color=${rep.color}`;
+  }
+
   // ---------- Elección de líneas ----------
   function pickLine() {
     if (queued()) return session.queue.shift() ?? null;
@@ -315,6 +356,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       prefixLength: prefix.length,
       newBudget: session.newBudget,
       skipped: session.skipped,
+      priority,
     });
   }
 
@@ -345,6 +387,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       lineFailed: false,
       assist: session.assist,
       results: [], // por jugada: 'ok', 'bad' o 'learn'
+      start: trapStart.get(lineId(line)) ?? 0, // trampas: lo anterior al error del rival se juega solo
     };
     fill(comment);
     viewPly = null;
@@ -377,10 +420,10 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     const { line, idx } = cur;
     if (idx >= line.length) return lineDone();
     const step = line[idx];
-    const auto = idx < prefix.length || !isUserTurn(rep, step.from) || isKnownAndNotDue(step);
+    const auto = idx < Math.max(prefix.length, cur.start) || !isUserTurn(rep, step.from) || isKnownAndNotDue(step);
     if (auto) {
       // Jugada del rival, del tramo inicial elegido o que ya sabes: se juega sola.
-      const fast = idx < prefix.length || isUserTurn(rep, step.from);
+      const fast = idx < Math.max(prefix.length, cur.start) || isUserTurn(rep, step.from);
       laterInLine(() => {
         playStep(step);
         cur.idx++;
@@ -441,6 +484,9 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
       if (step.move.comment) comment.append(h('p', { class: 'learn' }, '💡 ', step.move.comment));
     } else if (showMoves) {
       showCurrentMove(step);
+    } else if (traps && cur.idx === cur.start + 1) {
+      setShapes([]);
+      say('El rival acaba de equivocarse: ¿cómo lo castigas?', 'warn');
     } else {
       setShapes([]);
       say('Tu turno: ¿qué jugarías aquí?');
@@ -587,7 +633,7 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
   }
 
   function skipLine() {
-    if (!cur || (preview && !previewAll)) return;
+    if (!cur || (preview && !previewAll && !traps)) return;
     session.skipped.add(lineId(cur.line));
     cur.awaiting = false;
     nextLine();
@@ -688,7 +734,8 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
     if (preview) return finishPreview();
 
     let text;
-    if (!lines.length) text = 'No hay líneas para entrenar aquí. Añade jugadas en el editor.';
+    if (traps && !trapList.length) text = 'Este repertorio no tiene trampas explicadas todavía. Los cursos de gambitos tienen muchas.';
+    else if (!lines.length) text = 'No hay líneas para entrenar aquí. Añade jugadas en el editor.';
     else if (!session.lines && session.skipped.size) text = 'Has saltado todas las líneas pendientes.';
     else if (!session.lines) {
       text = modo === 'errores'
@@ -731,8 +778,9 @@ export function renderTrain(root, { id, modo = 'repaso', desde = '', todo = fals
 
   function finishPreview() {
     if (!lines.length) return say('Este curso no tiene líneas.', 'warn');
+    if (traps && !trapList.length) return say('Este curso no tiene trampas explicadas todavía.', 'warn');
     play('done');
-    const what = previewAll ? `Práctica terminada: ${session.lines} ${session.lines === 1 ? 'línea' : 'líneas'}` : 'Prueba terminada';
+    const what = previewAll || traps ? `${traps ? 'Trampas' : 'Práctica'} terminada: ${session.lines} ${session.lines === 1 ? 'ejercicio' : 'ejercicios'}` : 'Prueba terminada';
     say(session.wrong
       ? `${what}, con ${session.wrong} ${session.wrong === 1 ? 'fallo' : 'fallos'}.`
       : `${what} sin fallos. 🎉`, 'ok');
