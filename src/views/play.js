@@ -9,7 +9,7 @@ import { playMove } from '../sound.js';
 import { san } from '../notation.js';
 import { START_FEN } from '../repertoire.js';
 import { icon } from '../icons.js';
-import { VERDICTS, moveLoss, verdict, formatEval, accuracy } from '../game-review.js';
+import { VERDICTS, moveLoss, verdict, formatEval, accuracy, scoreValue } from '../game-review.js';
 
 // Con `game` ({ sans, color, title, link }) no se juega: se revisa una partida tuya ya jugada.
 export function renderPlay(root, { fen = START_FEN, color = 'white', game = null }) {
@@ -38,6 +38,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
   const status = h('div', { class: 'feedback', 'aria-live': 'polite' });
   const movesEl = h('div', { class: 'line-text play-moves' });
   const reviewEl = h('div', { class: 'review' });
+  const evalBar = h('div', { class: `eval-bar ${color === 'black' ? 'flipped' : ''}`, hidden: true }, h('div', { class: 'eval-fill' }), h('span', { class: 'eval-num' }));
   const reviewBtn = h('button', { class: 'btn primary', onClick: startReview }, icon('chart'), 'Revisar partida');
   const resumeBtn = h('button', { class: 'btn', hidden: true, onClick: stopReview }, icon('play'), 'Seguir jugando');
   const levelBtns = Object.entries(LEVELS).map(([id, l]) =>
@@ -65,12 +66,12 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
         : h('p', { class: 'muted small' }, 'Sigue la partida desde donde acaba tu línea y luego revísala: verás qué jugadas fueron buenas y qué había que jugar.'),
     ),
     h('div', { class: 'board-col' },
-      boardEl,
+      h('div', { class: 'board-wrap' }, evalBar, boardEl),
       h('div', { class: 'board-controls' },
         nav.back,
         nav.forward,
         game ? null : h('button', { class: 'icon-btn', title: 'Deshacer tu última jugada', onClick: undo }, '↶'),
-        h('button', { class: 'icon-btn', title: 'Girar el tablero', onClick: () => board.toggleOrientation() }, '⟲'),
+        h('button', { class: 'icon-btn', title: 'Girar el tablero', onClick: () => { board.toggleOrientation(); evalBar.classList.toggle('flipped'); } }, '⟲'),
         game ? null : h('button', { class: 'icon-btn', title: 'Empezar de nuevo desde la posición de partida', onClick: restart }, '⏮'),
       ),
     ),
@@ -244,6 +245,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
     resumeBtn.hidden = true;
     levelCard.hidden = false;
     fill(reviewEl);
+    evalBar.hidden = true;
     sync(played.length ? squaresOf(played[played.length - 1].from + played[played.length - 1].to) : undefined);
     if (chess.isGameOver()) finished();
     else if (colorToMove(chess) === color) say('Tu turno.');
@@ -278,6 +280,19 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
     }
   }
 
+  // Barra de evaluación a la izquierda del tablero: la parte blanca crece con la ventaja de las blancas.
+  function showEval(score, whiteToMove) {
+    const s = scoreValue(score) * (whiteToMove ? 1 : -1);
+    const pct = Math.abs(s) >= 9000 ? (s > 0 ? 100 : 0)
+      : Math.max(4, Math.min(96, 50 + 50 * (2 / (1 + Math.exp(-0.004 * s)) - 1)));
+    evalBar.hidden = false;
+    evalBar.querySelector('.eval-fill').style.height = `${pct}%`;
+    const num = evalBar.querySelector('.eval-num');
+    num.textContent = formatEval(score, whiteToMove).replace(/^[+−]/, '');
+    num.className = `eval-num ${s >= 0 ? 'white' : 'black'}`;
+    evalBar.title = `Evaluación: ${formatEval(score, whiteToMove)} (+ ventaja de las blancas, − de las negras)`;
+  }
+
   function select(i) {
     if (!review?.moves.length) return;
     const idx = Math.max(0, Math.min(review.moves.length - 1, i));
@@ -301,6 +316,7 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
     const shapes = [arrow(m.from + m.to, v.kind === 'ok' ? 'green' : v.kind === 'warn' ? 'yellow' : 'red')];
     if (info.best && info.verdict !== 'mejor') shapes.push(arrow(info.best, 'blue'));
     board.setAutoShapes(shapes);
+    showEval(review.evals[idx + 1], new Chess(m.after).turn() === 'w');
 
     const who = info.mine ? 'Tu jugada' : game ? 'La jugada del rival' : 'El motor';
     fill(reviewEl,
@@ -314,7 +330,6 @@ export function renderPlay(root, { fen = START_FEN, color = 'white', game = null
         line.length > 1 && info.verdict !== 'mejor'
           ? h('p', { class: 'muted small' }, 'Idea: ', line.map(san).join(' '))
           : null,
-        h('p', { class: 'muted small' }, `Tras ${san(m.san)}: ${evalAfter} (+ ventaja de las blancas, − de las negras).`),
       ),
       review.summary,
     );
